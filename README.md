@@ -1,2 +1,2 @@
-# -OCR-
+# KIM CHONG MU
 영수증 OCR 기반 세부 정산 앱 프로젝트
