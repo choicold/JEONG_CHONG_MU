@@ -21,14 +21,8 @@ public class Member {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", length = 50)
-    private String name;
-
     @Column(name = "kakao_id", nullable = false, unique = true)
     private Long kakaoId;
-
-    @Column(name = "email", length = 100)
-    private String email;
 
     @Column(name = "nickname", length = 50)
     private String nickname;
@@ -36,8 +30,8 @@ public class Member {
     @Column(name = "profile_image_url", length = 500)
     private String profileImageUrl;
 
-    @Column(name = "thumnail_image_url", length = 500)
-    private String thumnailImageUrl;
+    @Column(name = "thumbnail_image_url", length = 500)
+    private String thumbnailImageUrl;
 
     @Column(name = "is_default_image")
     private Boolean isDefaultImage;
@@ -62,19 +56,11 @@ public class Member {
         if (kakaoUser.getKakaoAccount() != null) {
             var kakaoAccount = kakaoUser.getKakaoAccount();
 
-            if (kakaoAccount.getEmail() != null) {
-                member.email = kakaoAccount.getEmail();
-            }
-
-            if (kakaoAccount.getName() != null) {
-                member.name = kakaoAccount.getName();
-            }
-
             if (kakaoAccount.getProfile() != null) {
                 var profile = kakaoAccount.getProfile();
                 member.nickname = profile.getNickname();
                 member.profileImageUrl = profile.getProfileImageUrl();
-                member.thumnailImageUrl = profile.getThumbnailImageUrl();
+                member.thumbnailImageUrl = profile.getThumbnailImageUrl();
                 member.isDefaultImage = profile.isDefaultImage();
                 member.isDefaultNickname = profile.isDefaultNickname();
             }

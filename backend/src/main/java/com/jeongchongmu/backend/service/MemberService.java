@@ -46,19 +46,11 @@ public class MemberService {
         if (kakaoUser.getKakaoAccount() != null) {
             var kakaoAccount = kakaoUser.getKakaoAccount();
 
-            if (kakaoAccount.getEmail() != null) {
-                member.setEmail(kakaoAccount.getEmail());
-            }
-
-            if (kakaoAccount.getName() != null) {
-                member.setName(kakaoAccount.getName());
-            }
-
             if (kakaoAccount.getProfile() != null) {
                 var profile = kakaoAccount.getProfile();
                 member.setNickname(profile.getNickname());
                 member.setProfileImageUrl(profile.getProfileImageUrl());
-                member.setThumnailImageUrl(profile.getThumbnailImageUrl());
+                member.setThumbnailImageUrl(profile.getThumbnailImageUrl());
                 member.setIsDefaultImage(profile.isDefaultImage());
                 member.setIsDefaultNickname(profile.isDefaultNickname());
             }

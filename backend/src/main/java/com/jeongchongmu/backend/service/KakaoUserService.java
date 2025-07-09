@@ -36,7 +36,7 @@ public class KakaoUserService {
             // 3. 카카오 API 호출
             ResponseEntity<KakaoUserResponse> response = restTemplate.exchange(
                     userInfoUri,
-                    HttpMethod.POST,
+                    HttpMethod.GET,
                     request,
                     KakaoUserResponse.class
             );
