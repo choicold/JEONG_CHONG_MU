@@ -9,6 +9,5 @@ import java.util.Optional;
 @Repository
 public interface OcrItemRepository extends JpaRepository<OcrItem, Long> {
 
-    Optional<OcrItem> findbyid(Long id);
 
 }
