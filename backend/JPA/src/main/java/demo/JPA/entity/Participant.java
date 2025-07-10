@@ -77,4 +77,12 @@ public class Participant {
         this.isSubmitted = false;
         this.uniqueLinkToken = uniqueLinkToken;
     }
+
+    /**
+     * 투표 제출을 완료 상태로 변경합니다.
+     */
+    public void completeSubmission() {
+        this.isSubmitted = true;
+        this.submittedAt = OffsetDateTime.now();
+    }
 }

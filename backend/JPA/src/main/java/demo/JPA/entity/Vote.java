@@ -1,46 +1,41 @@
 package demo.JPA.entity;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import java.time.OffsetDateTime;
+import lombok.*;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.time.OffsetDateTime;
 
 @Entity
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "\"Vote\"", uniqueConstraints = {
-        @UniqueConstraint(
-                name = "participant_item_unique",
-                columnNames = {"participant_id", "ocr_item_id"}
-        )
-})
+@Table(name = "\"Vote\"")
 public class Vote {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @JsonIgnore // 이 Settlement를 JSON으로 바꿀 때 Member는 무시
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "participant_id", nullable = false)
     private Participant participant;
 
-    @JsonIgnore // 이 Settlement를 JSON으로 바꿀 때 Member는 무시
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ocr_item_id", nullable = false)
     private OcrItem ocrItem;
 
-    @Column(name = "is_participated", nullable = false)
-    private boolean isParticipated;
+    @Column(name = "is_participated", nullable = true)
+    private Boolean isParticipated;
 
-    @Column(name = "comment", length = 200)
+    @Column(length = 200)
     private String comment;
 
-    @CreationTimestamp
-    @Column(name = "voted_at", nullable = false, updatable = false)
+    @Column(name = "voted_at", nullable = false, updatable = false, insertable = false, columnDefinition = "TIMESTAMPTZ DEFAULT NOW()")
     private OffsetDateTime votedAt;
+
+    @Builder // 빌더 패턴을 사용하기 위해 추가
+    public Vote(Participant participant, OcrItem ocrItem, String comment) {
+        this.participant = participant;
+        this.ocrItem = ocrItem;
+        this.comment = comment;
+    }
 }
