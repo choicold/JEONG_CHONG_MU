@@ -1,55 +1,45 @@
-package JPA.service;
+package demo.JPA.service;
 
-import JPA.dto.OcrItemDto;
-import JPA.dto.OcrParseResult;
-import JPA.entity.OcrItem;
-import JPA.entity.OcrReceipt;
-import JPA.repository.OcrItemRepository;
-import JPA.repository.OcrReceiptRepository;
+import demo.JPA.dto.OcrParseResult;
+import demo.JPA.entity.OcrItem;
+import demo.JPA.entity.OcrReceipt;
+import demo.JPA.entity.Settlement;
+import demo.JPA.repository.OcrReceiptRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class OcrService {
+public class OcrStorageService {
 
     private final OcrReceiptRepository ocrReceiptRepository;
-    private final OcrItemRepository ocrItemRepository;
 
-    /**
-     * OCR 결과를 받아서 DB에 저장하는 메서드
-     * @param parseResult OCR 결과 DTO
-     * @param settlementId 연결된 정산 ID
-     * @param imageUrl 업로드된 영수증 이미지 URL
-     */
+    // 📌 [수정] settlementId 파라미터 제거
     @Transactional
-    public void saveOcrResult(OcrParseResult parseResult, Long settlementId, String imageUrl) {
-        // 1. OCR 영수증 메타 정보 저장
+    public OcrReceipt saveOcrResult(OcrParseResult parseResult, String imageUrl) {
+        // 📌 [수정] 중복된 코드 한 줄 삭제 및 settlement 관련 로직 제거
         OcrReceipt receipt = OcrReceipt.builder()
-                .settlementId(settlementId)
                 .receiptImageUrl(imageUrl)
                 .totalAmount(parseResult.getTotalAmount())
                 .receiptDate(parseResult.getReceiptDate())
                 .ocrProcessedAt(OffsetDateTime.now())
                 .build();
-        ocrReceiptRepository.save(receipt);
 
-        // 2. OCR 항목별 아이템 저장
         List<OcrItem> items = parseResult.getItems().stream()
                 .map(dto -> OcrItem.builder()
-                        .ocrReceipt(receipt)  // FK 연결
                         .itemName(dto.getItemName())
                         .itemPrice(dto.getItemPrice())
                         .quantity(dto.getQuantity())
                         .build())
                 .collect(Collectors.toList());
 
-        ocrItemRepository.saveAll(items);
+        items.forEach(receipt::addOcrItem);
+
+        return ocrReceiptRepository.save(receipt);
     }
 }

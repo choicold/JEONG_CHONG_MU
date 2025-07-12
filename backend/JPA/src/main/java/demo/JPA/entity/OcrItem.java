@@ -12,9 +12,17 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import lombok.Builder;
+import lombok.AllArgsConstructor;
+import lombok.Setter;
+
+
 @Entity
 @Getter
+@Setter // 연관관계 편의 메서드를 위해 추가
+@Builder // 📌 [추가] Builder 어노테이션
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor // 📌 [추가]
 @Table(name = "\"OCR_Item\"")
 public class OcrItem {
 
