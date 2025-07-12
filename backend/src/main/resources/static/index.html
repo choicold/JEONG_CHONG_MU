@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동적 JSON POST 요청 테스트</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding: 20px; max-width: 700px; margin: auto; }
+        .container { background-color: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 25px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], input[type="number"], input[type="datetime-local"] { width: 95%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 10px 20px; font-size: 1rem; color: #fff; background-color: #007bff; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .participant-entry { border: 1px dashed #007bff; padding: 15px; margin-top: 15px; border-radius: 5px; position: relative; }
+        .add-btn { background-color: #28a745; margin-top: 10px; }
+        .add-btn:hover { background-color: #218838; }
+        .remove-btn { position: absolute; top: 10px; right: 10px; background-color: #dc3545; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; font-weight: bold; line-height: 25px; text-align: center; }
+        #submit-btn { background-color: #17a2b8; margin-top: 20px; width: 100%; }
+        #submit-btn:hover { background-color: #138496; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>정산 정보 전송 (동적 폼) 📝</h1>
+
+    <fieldset>
+        <legend><h3>정산 정보</h3></legend>
+        <div class="form-group">
+            <label for="title">제목</label>
+            <input type="text" id="title" value="8월 팀 점심 식사">
+        </div>
+        <div class="form-group">
+            <label for="description">설명</label>
+            <input type="text" id="description" value="서초역 근처 맛집">
+        </div>
+        <div class="form-group">
+            <label for="hostMemberId">주최자 ID</label>
+            <input type="number" id="hostMemberId" value="101">
+        </div>
+        <div class="form-group">
+            <label for="deadline">마감일</label>
+            <input type="datetime-local" id="deadline">
+        </div>
+    </fieldset>
+
+    <fieldset>
+        <legend><h3>참여자 정보</h3></legend>
+        <div id="participants-container"></div>
+        <button type="button" id="add-participant-btn" class="add-btn">+ 참여자 추가</button>
+    </fieldset>
+
+    <button type="button" id="submit-btn">최종 정산 정보 전송 (JSON)</button>
+</div>
+
+<script>
+    // --- 요소 가져오기 ---
+    const addParticipantBtn = document.getElementById('add-participant-btn');
+    const participantsContainer = document.getElementById('participants-container');
+    const submitBtn = document.getElementById('submit-btn');
+
+    // --- 참여자 추가 기능 ---
+    addParticipantBtn.addEventListener('click', () => {
+        // 새로운 참여자 입력 폼을 담을 div 생성
+        const participantEntry = document.createElement('div');
+        participantEntry.className = 'participant-entry';
+
+        // 각 필드에 대한 HTML 내부 구조 설정
+        participantEntry.innerHTML = `
+            <button type="button" class="remove-btn" onclick="removeParticipant(this)">X</button>
+            <div class="form-group">
+                <label>참여자 ID (Kakao ID)<- 쓰지마십쇼, 사라진값</label>
+                <input type="number" name="participant_id" placeholder="예: 201">
+            </div>
+            <div class="form-group">
+                <label>UUID</label>
+                <input type="number" name="participant_uuid" placeholder="예: 12345">
+            </div>
+            <div class="form-group">
+                <label>이름</label>
+                <input type="text" name="participant_name" placeholder="예: 김정산">
+            </div>
+            <div class="form-group">
+                <label>썸네일 URL</label>
+                <input type="text" name="participant_thumbnailUrl" placeholder="http://...">
+            </div>
+        `;
+
+        // 컨테이너에 새로 만든 폼 추가
+        participantsContainer.appendChild(participantEntry);
+    });
+
+    // --- 참여자 삭제 기능 ---
+    function removeParticipant(button) {
+        // 'X' 버튼의 부모 요소인 .participant-entry div를 찾아서 삭제
+        button.closest('.participant-entry').remove();
+    }
+
+    // --- 최종 데이터 제출 기능 ---
+    submitBtn.addEventListener('click', async () => {
+        // 1. 정산(Settlement) 기본 정보 수집
+        const settlementData = {
+            title: document.getElementById('title').value,
+            description: document.getElementById('description').value,
+            hostMemberId: parseInt(document.getElementById('hostMemberId').value, 10),
+            deadline: document.getElementById('deadline').value ? document.getElementById('deadline').value : null
+        };
+
+        // 2. 동적으로 추가된 참여자(Participant) 정보 수집
+        const participantsArray = [];
+        const participantEntries = document.querySelectorAll('.participant-entry');
+
+        participantEntries.forEach(entry => {
+            const participant = {
+                id: parseInt(entry.querySelector('[name=participant_id]').value, 10) || null,
+                uuid: parseInt(entry.querySelector('[name=participant_uuid]').value, 10) || null,
+                name: entry.querySelector('[name=participant_name]').value,
+                thumbnailUrl: entry.querySelector('[name=participant_thumbnailUrl]').value
+            };
+            participantsArray.push(participant);
+        });
+
+        // 3. 정산 정보와 참여자 정보를 하나의 객체로 합침
+        const finalPayload = {
+            ...settlementData,
+            participants: participantsArray
+        };
+
+        console.log('전송할 최종 JSON 데이터:', finalPayload);
+
+        // 4. fetch API로 서버에 데이터 전송
+        try {
+            const response = await fetch('http://localhost:8080/settlement', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(finalPayload)
+            });
+
+            const resultText = await response.text();
+            alert(`요청 성공!\n\nStatus: ${response.status}\nResponse:\n${resultText}`);
+        } catch (error) {
+            console.error('요청 실패:', error);
+            alert('요청 실패! 브라우저 콘솔을 확인하세요.');
+        }
+    });
+</script>
+
+</body>
+</html>
