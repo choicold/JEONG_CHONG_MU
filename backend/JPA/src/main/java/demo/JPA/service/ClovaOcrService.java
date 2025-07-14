@@ -17,6 +17,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +29,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ClovaOcrService {
 
-    // 📌 WebClient.Builder를 주입받도록 변경
     private final WebClient.Builder webClientBuilder;
 
     @Value("${clova.api.url}")
@@ -36,19 +37,16 @@ public class ClovaOcrService {
     @Value("${clova.api.secret}")
     private String secretKey;
 
-    // 📌 파라미터로 MultipartFile을 직접 받도록 변경
     public OcrParseResult callClovaOcr(MultipartFile file) {
         try {
-            // 1. Clova OCR에 보낼 'message' JSON 파트 생성
             JSONObject message = new JSONObject()
                     .put("version", "V2")
                     .put("requestId", UUID.randomUUID().toString())
                     .put("timestamp", System.currentTimeMillis())
                     .put("images", new org.json.JSONArray().put(new JSONObject()
                             .put("name", "receipt")
-                            .put("format", "jpg"))); // 또는 png
+                            .put("format", "jpg")));
 
-            // 2. multipart/form-data 요청 본문 생성
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             body.add("message", message.toString());
             body.add("file", new ByteArrayResource(file.getBytes()) {
@@ -58,36 +56,40 @@ public class ClovaOcrService {
                 }
             });
 
-            // 3. WebClient를 사용하여 파일과 함께 API 호출
             ClovaOcrResponseDto responseDto = webClientBuilder.build().post()
                     .uri(apiUrl)
                     .header("X-OCR-SECRET", secretKey)
-                    .contentType(MediaType.MULTIPART_FORM_DATA) // 📌 Content-Type 변경
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
                     .body(BodyInserters.fromMultipartData(body))
                     .retrieve()
-                    .bodyToMono(ClovaOcrResponseDto.class) // 응답은 DTO로 자동 변환
-                    .block(); // 동기식으로 결과를 기다림
+                    .bodyToMono(ClovaOcrResponseDto.class)
+                    .block();
 
             if (responseDto == null) {
                 throw new RuntimeException("Clova OCR API 호출에 실패했습니다.");
             }
-
-            // 4. 응답 결과를 OcrParseResult로 변환
             return convertToParseResult(responseDto);
-
         } catch (IOException e) {
             throw new RuntimeException("파일을 읽는 중 오류가 발생했습니다.", e);
         } catch (Exception e) {
-            throw new RuntimeException("Clova OCR 호출 실패", e);
+            throw new RuntimeException("Clova OCR 호출 중 실패: " + e.getMessage(), e);
         }
     }
+
 
     private OcrParseResult convertToParseResult(ClovaOcrResponseDto responseDto) {
         ClovaOcrResponseDto.Image image = responseDto.getImages().stream().findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("OCR 결과에 이미지가 없습니다."));
 
-        ClovaOcrResponseDto.ReceiptResult result = image.getReceipt().getResult();
+        if (image.getReceipt() == null || image.getReceipt().getResult() == null) {
+            throw new IllegalArgumentException("유효한 영수증 결과가 없습니다.");
+        }
 
+        ClovaOcrResponseDto.ReceiptResult result = image.getReceipt().getResult();
+        ClovaOcrResponseDto.StoreInfo storeInfo = result.getStoreInfo();
+        ClovaOcrResponseDto.PaymentInfo paymentInfo = result.getPaymentInfo();
+
+        // 항목(items) 파싱
         List<OcrParseResult.OcrItemDto> items = Optional.ofNullable(result.getSubResults())
                 .orElse(Collections.emptyList())
                 .stream()
@@ -96,23 +98,22 @@ public class ClovaOcrService {
                 .orElse(Collections.emptyList())
                 .stream()
                 .map(item -> {
-                    // 📌 [수정] 각 필드가 null일 경우를 대비하여 Optional로 안전하게 처리합니다.
                     String name = Optional.ofNullable(item.getName())
                             .map(ClovaOcrResponseDto.FormattedText::getFormattedText)
-                            .orElse(""); // 이름이 없으면 빈 문자열
-
+                            .orElse("");
                     int quantity = Optional.ofNullable(item.getCount())
                             .map(count -> count.getFormattedAsInt(1))
-                            .orElse(1); // 수량이 없으면 기본값 1
-
+                            .orElse(1);
                     BigDecimal price = Optional.ofNullable(item.getPrice())
                             .map(ClovaOcrResponseDto.PriceInfo::getAsBigDecimal)
-                            .orElse(BigDecimal.ZERO); // 가격이 없으면 0
-
-                    return new OcrParseResult.OcrItemDto(name, quantity, price);
+                            .orElse(BigDecimal.ZERO);
+                    return OcrParseResult.OcrItemDto.builder()
+                            .itemName(name).quantity(quantity).itemPrice(price)
+                            .build();
                 })
                 .collect(Collectors.toList());
 
+        // 총액(totalPrice) 파싱
         BigDecimal totalPrice = Optional.ofNullable(result.getTotalPrice())
                 .map(ClovaOcrResponseDto.PriceInfo::getAsBigDecimal)
                 .filter(price -> price.compareTo(BigDecimal.ZERO) > 0)
@@ -120,9 +121,38 @@ public class ClovaOcrService {
                         .map(item -> item.getItemPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                         .reduce(BigDecimal.ZERO, BigDecimal::add));
 
+        // 상세 정보 파싱
+        String storeName = Optional.ofNullable(storeInfo.getName()).map(ClovaOcrResponseDto.FormattedText::getFormattedText).orElse(null);
+        String storeBranch = Optional.ofNullable(storeInfo.getSubName()).map(ClovaOcrResponseDto.FormattedText::getFormattedText).orElse(null);
+        String bizNum = Optional.ofNullable(storeInfo.getBizNum()).map(ClovaOcrResponseDto.FormattedText::getFormattedText).orElse(null);
+        String address = Optional.ofNullable(storeInfo.getAddresses()).flatMap(list -> list.stream().findFirst()).map(ClovaOcrResponseDto.FormattedText::getFormattedText).orElse(null);
+        String tel = Optional.ofNullable(storeInfo.getTel()).flatMap(list -> list.stream().findFirst()).map(ClovaOcrResponseDto.FormattedText::getFormattedText).orElse(null);
+
+        // 날짜 파싱
+        LocalDate receiptDate = Optional.ofNullable(paymentInfo.getDate()).map(ClovaOcrResponseDto.FormattedDate::getFormattedDate).orElse(null);
+
+        // 시간 파싱
+        LocalTime paymentTime = Optional.ofNullable(paymentInfo)
+                .map(ClovaOcrResponseDto.PaymentInfo::getTime)
+                .map(ClovaOcrResponseDto.FormattedTime::getText)
+                .map(text -> {
+                    try {
+                        return LocalTime.parse(text.replaceAll("\\s", ""));
+                    } catch (DateTimeParseException e) {
+                        return null; // 파싱 실패 시 null 반환
+                    }
+                })
+                .orElse(null);
+
+        // 최종 DTO 빌드
         return OcrParseResult.builder()
-                .imageUrl(null)
-                .receiptDate(result.getPaymentInfo().getDate().getFormattedDate())
+                .storeName(storeName)
+                .storeBranch(storeBranch)
+                .bizNum(bizNum)
+                .address(address)
+                .tel(tel)
+                .receiptDate(receiptDate)
+                .paymentTime(paymentTime)
                 .totalAmount(totalPrice)
                 .items(items)
                 .build();

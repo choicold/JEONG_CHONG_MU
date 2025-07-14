@@ -1,43 +1,62 @@
 package demo.JPA.service;
-
 import demo.JPA.dto.VoteSubmitRequestDto;
-import demo.JPA.entity.Participant;
-import demo.JPA.entity.Vote;
-import demo.JPA.repository.ParticipantRepository;
-import demo.JPA.repository.VoteRepository;
+import demo.JPA.entity.*;
+import demo.JPA.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class VoteSubmitService {
-
+    private final SettlementRepository settlementRepository;
     private final ParticipantRepository participantRepository;
     private final VoteRepository voteRepository;
+    private final OcrItemRepository ocrItemRepository;
 
     @Transactional
-    public void submitVote(String token, VoteSubmitRequestDto requestDto) {
-        // 1. 토큰으로 참여자 인증
-        Participant participant = participantRepository.findByUniqueLinkTokenWithSettlement(token)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid token"));
+    public String submitVote(UUID uuid, VoteSubmitRequestDto requestDto) {
+        Settlement settlement = settlementRepository.findByUuid(uuid)
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 정산 URL입니다."));
 
-        // 2. 이미 제출했는지 확인 (선택사항: 재투표를 막고 싶을 경우)
-        if (participant.isSubmitted()) {
-            throw new IllegalStateException("이미 투표를 제출했습니다.");
+        // 1. 이미 정산이 끝났거나, 정원이 다 찼는지 확인
+        long currentParticipants = participantRepository.countBySettlementId(settlement.getId());
+        if (currentParticipants >= settlement.getTotalParticipantCount()) {
+            throw new IllegalStateException("이미 모든 인원이 투표를 완료했습니다.");
         }
 
-        // 3. 제출된 투표 내용으로 Vote 테이블 업데이트
-        requestDto.choices().forEach(choice -> {
-            Vote vote = voteRepository.findByParticipantIdAndOcrItemId(participant.getId(), choice.itemId())
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid item ID for this participant"));
+        // 2. 참여자 생성 (DB의 UNIQUE 제약조건이 중복 제출을 막아줌)
+        Participant participant = Participant.builder()
+                .settlement(settlement)
+                .participantName(requestDto.participantName())
+                .build();
+        try {
+            participantRepository.saveAndFlush(participant);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new IllegalStateException("'" + requestDto.participantName() + "' 이름으로 이미 투표가 제출되었습니다.");
+        }
 
-            // Vote 엔티티에 Setter가 있다고 가정 (예: setIsParticipated)
-            vote.setIsParticipated(choice.isAttended());
-        });
-        // @Transactional에 의해 변경된 vote 객체들은 메소드 종료 시 자동으로 DB에 업데이트됩니다.
+        // 3. 투표 내용(Vote) 저장
+        for (VoteSubmitRequestDto.Choice choice : requestDto.choices()) {
+            OcrItem ocrItem = ocrItemRepository.findById(choice.itemId())
+                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 항목입니다: " + choice.itemId()));
 
-        // 4. 참여자의 제출 상태를 true로 변경
-        participant.completeSubmission();
+            Vote vote = Vote.builder()
+                    .participant(participant)
+                    .ocrItem(ocrItem)
+                    .isParticipated(choice.isParticipated())
+                    .build();
+            voteRepository.save(vote);
+        }
+
+        // 4. 모든 인원이 투표를 완료했는지 다시 확인
+        if (currentParticipants + 1 == settlement.getTotalParticipantCount()) {
+            settlement.setStatus(SettlementStatus.COMPLETED); // 상태 변경
+            // TODO: 여기서 총무에게 푸시 알림을 보내는 로직을 추가할 수 있습니다.
+            return "투표가 제출되었습니다. 모든 인원이 투표를 완료하여 정산이 마감되었습니다!";
+        }
+
+        return "투표가 성공적으로 제출되었습니다.";
     }
 }

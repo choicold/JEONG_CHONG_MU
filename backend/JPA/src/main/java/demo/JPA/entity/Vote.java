@@ -8,6 +8,8 @@ import java.time.OffsetDateTime;
 @Entity
 @Getter
 @Setter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "\"Vote\"")
 public class Vote {
@@ -31,11 +33,4 @@ public class Vote {
 
     @Column(name = "voted_at", nullable = false, updatable = false, insertable = false, columnDefinition = "TIMESTAMPTZ DEFAULT NOW()")
     private OffsetDateTime votedAt;
-
-    @Builder // 빌더 패턴을 사용하기 위해 추가
-    public Vote(Participant participant, OcrItem ocrItem, String comment) {
-        this.participant = participant;
-        this.ocrItem = ocrItem;
-        this.comment = comment;
-    }
 }

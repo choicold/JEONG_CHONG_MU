@@ -1,36 +1,32 @@
 package demo.JPA.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Builder; // Builder 임포트
+import lombok.Getter;
 
-import java.math.BigDecimal; // BigDecimal 사용
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
-/**
- * Clova OCR 응답을 바탕으로 파싱된 전체 영수증 정보를 담는 DTO 클래스.
- * - 총 금액, 날짜, 품목 리스트 등을 포함한다.
- */
-@Data
+@Getter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class OcrParseResult {
-
-    private String imageUrl; // 📌 [수정] imageUrl 필드 추가
+    private String imageUrl;
+    private String storeName;
+    private String storeBranch;
+    private String bizNum;
+    private String address;
+    private String tel;
     private LocalDate receiptDate;
-    private BigDecimal totalAmount; // 📌 [수정] totalAmount 필드 추가 (BigDecimal 타입)
+    private LocalTime paymentTime;
+    private BigDecimal totalAmount;
     private List<OcrItemDto> items;
 
-    // 내부 static 클래스로 DTO를 정의하면 더 좋습니다.
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
+    @Getter
+    @Builder // 👇 [수정] 이 클래스에 @Builder 어노테이션을 추가합니다.
     public static class OcrItemDto {
         private String itemName;
         private int quantity;
-        private BigDecimal itemPrice; // 📌 [수정] itemPrice 타입을 BigDecimal로 통일
+        private BigDecimal itemPrice;
     }
 }

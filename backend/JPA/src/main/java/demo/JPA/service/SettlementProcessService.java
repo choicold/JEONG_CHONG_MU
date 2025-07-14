@@ -2,8 +2,10 @@ package demo.JPA.service;
 
 import demo.JPA.dto.SettlementCreateRequestDto;
 import demo.JPA.entity.Member;
+import demo.JPA.entity.OcrReceipt;
 import demo.JPA.entity.Settlement;
 import demo.JPA.repository.MemberRepository;
+import demo.JPA.repository.OcrReceiptRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,58 +13,30 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class SettlementProcessService {
-    
-    //DI 추가
+
     private final SettlementCreationService settlementCreationService;
-    private final ParticipantCreationService participantCreationService;
-    private final VoteCreationService voteCreationService;
+    private final OcrReceiptRepository ocrReceiptRepository; // 👇 [추가] DI 추가
 
-    private final MemberRepository memberRepository;//test
-
-
-
-    /**
-     * 'POST /settlement' 요청을 처리
-     *  1. 일단 settlement 만들고
-     *  2-1 OCR 만들고
-     *  2-2 Participant 만들고
-     *  3. vote 만들기
-     *
-     *  <db 스키마 외래키 참고하세요>
-     */
-    @Transactional// controller에서 transaction불가하기에, service로 만듦
-    public Settlement createSettlementProcess(SettlementCreateRequestDto requestDto) {
+    @Transactional
+    public String createSettlementProcess(SettlementCreateRequestDto requestDto) {
 
         // 1. 정산(Settlement)을 먼저 생성합니다.
-//        Settlement settlement = settlementCreationService.createSettlement(requestDto);
+        // createSettlement의 반환값을 Settlement 객체로 받습니다.
+        Settlement newSettlement = settlementCreationService.createSettlement(requestDto);
 
-        // 2. 참여자(Participant)들을 생성합니다.
-        // 이 때 위에서 생성된 settlement 객체를 그대로 사용합니다.
-//        participantCreationService.createParticipantsForSettlement(
-//                settlement,
-//                requestDto.getParticipants()
-//        );
+        // 2. DTO에 포함된 이미지 URL들을 이용해 OcrReceipt를 찾아 Settlement와 연결합니다.
+        for (String url : requestDto.getImageUrl()) {
+            // 이미지 URL로 해당 OcrReceipt를 찾습니다.
+            OcrReceipt ocrReceipt = ocrReceiptRepository.findByReceiptImageUrl(url)
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid image URL: " + url));
 
+            // OcrReceipt에 방금 생성한 Settlement를 연결해줍니다. (JPA가 변경 감지하여 UPDATE)
+            ocrReceipt.setSettlement(newSettlement);
+        }
 
+        // 3. 생성된 정산의 고유 URL을 만들어 반환합니다. (프론트엔드 주소에 맞게 수정 필요)
+        String settlementUrl = "http://your-frontend-domain/vote/" + newSettlement.getUuid();
 
-        // 3. (나중에 구현) OCR 및 Vote 생성 로직...
-        // ocrCreationService.createOcr(...)
-
-        Long hostMemberId = 1L; // Long 타입으로 변경
-        Member hostMember = memberRepository.findById(hostMemberId).get();
-
-        Settlement settlement = Settlement.builder()
-                .title("팀 회식")
-                .description("1차로 고깃집, 2차로 맥주집을 간 상황을 가정합니다.")
-                .hostMember(hostMember)
-                .build();
-
-        settlement.setId(1L);
-
-        //4. vote 만들기
-        voteCreationService.createInitialVotes(settlement);
-
-        // 모든 작업이 성공적으로 끝나면, 트랜잭션이 커밋(Commit)됩니다.
-        return settlement;
+        return settlementUrl;
     }
 }

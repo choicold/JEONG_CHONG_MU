@@ -4,180 +4,173 @@
     <meta charset="UTF-8">
     <title>정산 투표</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 0; padding: 20px; background-color: #f8f9fa; color: #212529; }
-        .container { max-width: 800px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
-        h1, h2 { color: #343a40; }
-        h1 { text-align: center; margin-bottom: 10px; }
-        .participant-info { text-align: center; color: #6c757d; margin-bottom: 30px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 20px; background-color: #f8f9fa; }
+        .container { max-width: 800px; margin: 20px auto; background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        h1, h2 { color: #343a40; text-align: center; }
         .receipt-group { margin-bottom: 30px; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; }
-        .receipt-header { font-size: 1.2em; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #007bff; padding-bottom: 10px; color: #007bff; }
+        .receipt-header { display: flex; justify-content: space-between; align-items: center; font-size: 1.2em; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #007bff; padding-bottom: 10px; color: #007bff; }
+        .receipt-image { max-width: 100%; border-radius: 4px; margin-bottom: 15px; }
         .item-list { list-style: none; padding: 0; }
-        .item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #e9ecef; }
+        .item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #e9ecef; }
         .item:last-child { border-bottom: none; }
         .item-details { flex-grow: 1; }
         .item-name { font-weight: 500; }
-        .item-price { color: #495057; font-size: 0.9em; }
-        .vote-options { display: flex; gap: 10px; }
+        .item-price { color: #495057; }
         .vote-options label { cursor: pointer; padding: 8px 15px; border: 1px solid #ced4da; border-radius: 20px; transition: all 0.2s; }
         .vote-options input[type="radio"] { display: none; }
         .vote-options input[type="radio"]:checked + label { background-color: #007bff; color: white; border-color: #007bff; }
-        #message { text-align: center; font-size: 1.2em; padding: 40px; }
+        .submit-container { text-align: center; margin-top: 30px; }
+        #submit-vote-btn { padding: 12px 30px; font-size: 1.1rem; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        #name-entry-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 40px; border-radius: 8px; text-align: center; }
+        .modal-content input { padding: 10px; width: 80%; margin-bottom: 20px; }
+        .modal-content button { padding: 10px 20px; }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1 id="settlement-title"></h1>
-    <p class="participant-info"><span id="participant-name"></span>님, 투표를 진행해주세요.</p>
-    <div id="receipt-groups-container"></div>
-    <div id="message"></div>
-    <div class="submit-container">
-        <button id="submit-vote-btn">투표 완료하기</button>
+
+<div id="name-entry-modal">
+    <div class="modal-content">
+        <h2>정산에 참여할 이름을 입력해주세요.</h2>
+        <input type="text" id="participant-name-input" placeholder="예: 홍길동">
+        <button id="start-vote-btn">투표 시작하기</button>
     </div>
 </div>
 
+<div class="container" id="vote-container" style="display:none;">
+    <h1 id="settlement-title"></h1>
+    <div id="receipts-container"></div> <div class="submit-container">
+    <button id="submit-vote-btn">투표 완료하기</button>
+</div>
+</div>
+
 <script>
-    // 1. 두 함수 바깥에 '공용' 변수를 선언합니다.
-    let userToken = '';
+    // ... (상단 변수 선언 및 이름 입력 모달 로직은 동일) ...
+    let participantName = '';
+    const settlementUuid = window.location.pathname.split('/').pop();
+    const nameModal = document.getElementById('name-entry-modal');
+    const nameInput = document.getElementById('participant-name-input');
+    const startVoteBtn = document.getElementById('start-vote-btn');
+    const voteContainer = document.getElementById('vote-container');
 
-    window.addEventListener('DOMContentLoaded', async () => {
-        const pathParts = window.location.pathname.split('/');
-
-        // 2. 'const'로 새로 선언하는 대신, 공용 변수에 값을 할당합니다.
-        userToken = pathParts[pathParts.length - 1];
-
-        const messageDiv = document.getElementById('message');
-        messageDiv.textContent = '데이터를 불러오는 중...';
-
-        try {
-            // 3. 이제 이 함수도 공용 변수를 사용합니다. (이름 통일)
-            const response = await fetch(`/api/vote/${userToken}`);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText || '투표 정보를 불러오는데 실패했습니다.');
-            }
-
-            const contentType = response.headers.get("content-type");
-            if (contentType && contentType.indexOf("application/json") !== -1) {
-                const data = await response.json();
-                renderVotePage(data);
-            } else {
-                const textData = await response.text();
-                messageDiv.textContent = textData;
-            }
-
-        } catch (error) {
-            console.error('Error:', error);
-            messageDiv.textContent = error.message;
+    startVoteBtn.addEventListener('click', async () => {
+        participantName = nameInput.value.trim();
+        if (!participantName) {
+            alert('이름을 입력해주세요.');
+            return;
         }
+        nameModal.style.display = 'none';
+        await loadVoteItems();
+        voteContainer.style.display = 'block';
     });
 
-    function renderVotePage(data) {
-        document.getElementById('settlement-title').textContent = data.settlementTitle;
-        document.getElementById('participant-name').textContent = data.participantName;
-        document.getElementById('message').style.display = 'none'; // 메시지 숨기기
 
-        const container = document.getElementById('receipt-groups-container');
-        container.innerHTML = '';
+    // ▼▼▼▼▼▼▼▼▼▼ [수정] 함수 전체 로직 변경 ▼▼▼▼▼▼▼▼▼▼
+    async function loadVoteItems() {
+        try {
+            const response = await fetch(`/api/vote/${settlementUuid}`);
+            if (!response.ok) throw new Error('정산 정보를 불러오는 데 실패했습니다.');
 
-        if (!data.receiptGroups || data.receiptGroups.length === 0) {
-            document.getElementById('message').textContent = '투표할 항목이 없습니다.';
-            document.getElementById('message').style.display = 'block';
-            return;
-        }
+            const data = await response.json();
 
-        data.receiptGroups.forEach(group => {
-            const groupDiv = document.createElement('div');
-            groupDiv.className = 'receipt-group';
+            document.getElementById('settlement-title').textContent = data.settlementTitle;
+            const receiptsContainer = document.getElementById('receipts-container');
+            receiptsContainer.innerHTML = ''; // 기존 내용 초기화
 
-            const header = document.createElement('div');
-            header.className = 'receipt-header';
-            header.textContent = `영수증 (날짜: ${group.receiptDate})`;
-            groupDiv.appendChild(header);
+            // 영수증 그룹별로 반복
+            data.receiptGroups.forEach(group => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'receipt-group';
 
-            const itemList = document.createElement('ul');
-            itemList.className = 'item-list';
-
-            group.items.forEach(item => {
-                const itemLi = document.createElement('li');
-                itemLi.className = 'item';
-
-                const attendChecked = item.myVote === true ? 'checked' : '';
-                const notAttendChecked = item.myVote === false ? 'checked' : '';
-
-                itemLi.innerHTML = `
-                    <div class="item-details">
-                        <div class="item-name">${item.itemName} (x${item.quantity})</div>
-                        <div class="item-price">${item.price.toLocaleString()}원</div>
-                    </div>
-                    <div class="vote-options" data-item-id="${item.itemId}">
-                        <input type="radio" id="attend-${item.itemId}" name="vote-${item.itemId}" value="true" ${attendChecked}>
-                        <label for="attend-${item.itemId}">참여</label>
-                        <input type="radio" id="not-attend-${item.itemId}" name="vote-${item.itemId}" value="false" ${notAttendChecked}>
-                        <label for="not-attend-${item.itemId}">미참여</label>
-                    </div>
+                // 영수증 헤더 (날짜, 총액)
+                const header = document.createElement('div');
+                header.className = 'receipt-header';
+                header.innerHTML = `
+                    <span>날짜: ${group.receiptDate}</span>
+                    <span>총액: ${group.totalAmount.toLocaleString()}원</span>
                 `;
+                groupDiv.appendChild(header);
 
-                itemList.appendChild(itemLi);
+                // 영수증 이미지
+                if (group.receiptImageUrl) {
+                    const image = document.createElement('img');
+                    image.src = group.receiptImageUrl;
+                    image.className = 'receipt-image';
+                    groupDiv.appendChild(image);
+                }
+
+                // 항목 리스트
+                const itemList = document.createElement('ul');
+                itemList.className = 'item-list';
+
+                // 각 영수증에 속한 항목별로 반복
+                group.items.forEach(item => {
+                    const itemLi = document.createElement('li');
+                    itemLi.className = 'item';
+                    itemLi.innerHTML = `
+                        <div class="item-details">
+                            <div class="item-name">${item.itemName} (x${item.quantity})</div>
+                            <div class="item-price">${item.itemPrice.toLocaleString()}원</div>
+                        </div>
+                        <div class="vote-options" data-item-id="${item.itemId}">
+                            <input type="radio" id="attend-${item.itemId}" name="vote-${item.itemId}" value="true">
+                            <label for="attend-${item.itemId}">참여</label>
+                            <input type="radio" id="not-attend-${item.itemId}" name="vote-${item.itemId}" value="false" checked>
+                            <label for="not-attend-${item.itemId}">미참여</label>
+                        </div>
+                    `;
+                    itemList.appendChild(itemLi);
+                });
+
+                groupDiv.appendChild(itemList);
+                receiptsContainer.appendChild(groupDiv);
             });
 
-            groupDiv.appendChild(itemList);
-            container.appendChild(groupDiv);
-        });
-    }
-
-    document.getElementById('submit-vote-btn').addEventListener('click', async () => {
-        const choices = [];
-        const voteOptionDivs = document.querySelectorAll('.vote-options');
-
-        let allVoted = true;
-        voteOptionDivs.forEach(div => {
-            const checkedRadio = div.querySelector('input[type="radio"]:checked');
-            if (!checkedRadio) {
-                allVoted = false;
-            }
-        });
-
-        if (!allVoted) {
-            alert('모든 항목에 대해 투표해주세요.');
-            return;
+        } catch (error) {
+            voteContainer.innerHTML = `<h1>${error.message}</h1>`;
         }
+    }
+    // ▲▲▲▲▲▲▲▲▲▲ [수정] 함수 전체 로직 변경 ▲▲▲▲▲▲▲▲▲▲
 
-        voteOptionDivs.forEach(div => {
-            const itemId = div.dataset.itemId;
-            const checkedRadio = div.querySelector('input[type="radio"]:checked');
-            choices.push({
-                itemId: parseInt(itemId),
-                isAttended: checkedRadio.value === 'true'
-            });
+
+    // ... ('투표 완료하기' 버튼 이벤트 리스너는 동일) ...
+    document.getElementById('submit-vote-btn').addEventListener('click', async (event) => {
+        const submitButton = event.target;
+        submitButton.disabled = true;
+        submitButton.textContent = '처리 중...';
+
+        const choices = [];
+        document.querySelectorAll('.vote-options').forEach(div => {
+            const itemId = parseInt(div.dataset.itemId, 10);
+            const isParticipated = div.querySelector('input[type="radio"]:checked').value === 'true';
+            choices.push({ itemId, isParticipated });
         });
 
-        const requestBody = { choices: choices };
+        const requestBody = {
+            participantName: participantName,
+            choices: choices
+        };
 
         try {
-            // 4. 이제 이 함수도 공용 변수 'userToken'에 접근할 수 있습니다.
-            const response = await fetch('/api/votes', {
+            const response = await fetch(`/api/vote/${settlementUuid}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + userToken
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(requestBody)
             });
 
             const resultText = await response.text();
-            if (!response.ok) {
-                throw new Error(resultText);
-            }
+            if (!response.ok) throw new Error(resultText);
 
-            alert('투표가 성공적으로 제출되었습니다!');
-            window.location.href = '/vote-completed.html';
+            alert(resultText);
+            voteContainer.innerHTML = '<h1>투표해주셔서 감사합니다!</h1>';
 
         } catch (error) {
-            console.error('Submit Error:', error);
             alert(`오류 발생: ${error.message}`);
+            submitButton.disabled = false;
+            submitButton.textContent = '투표 완료하기';
         }
     });
+
 </script>
 </body>
 </html>

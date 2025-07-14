@@ -22,12 +22,17 @@ public class OcrStorageService {
     // 📌 [수정] settlementId 파라미터 제거
     @Transactional
     public OcrReceipt saveOcrResult(OcrParseResult parseResult, String imageUrl) {
-        // 📌 [수정] 중복된 코드 한 줄 삭제 및 settlement 관련 로직 제거
         OcrReceipt receipt = OcrReceipt.builder()
                 .receiptImageUrl(imageUrl)
                 .totalAmount(parseResult.getTotalAmount())
                 .receiptDate(parseResult.getReceiptDate())
                 .ocrProcessedAt(OffsetDateTime.now())
+                .storeName(parseResult.getStoreName())
+                .storeBranch(parseResult.getStoreBranch())
+                .bizNum(parseResult.getBizNum())
+                .address(parseResult.getAddress())
+                .tel(parseResult.getTel())
+                .paymentTime(parseResult.getPaymentTime())
                 .build();
 
         List<OcrItem> items = parseResult.getItems().stream()
@@ -38,7 +43,7 @@ public class OcrStorageService {
                         .build())
                 .collect(Collectors.toList());
 
-        items.forEach(receipt::addOcrItem);
+        items.forEach(receipt::addOcrItem); // ✨ 이 메서드가 올바르게 구현되었는지 2번 항목에서 확인
 
         return ocrReceiptRepository.save(receipt);
     }

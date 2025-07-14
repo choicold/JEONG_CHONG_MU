@@ -11,6 +11,8 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hibernate.dialect.PostgreSQLEnumJdbcType;
+import java.util.UUID; // UUID 임포트
+import org.hibernate.annotations.GenericGenerator;
 
 @Entity
 @Getter
@@ -26,13 +28,13 @@ public class Settlement {
     @Column(name = "title", nullable = false, length = 180)
     private String title;
 
-    @Column(name = "description", columnDefinition = "TEXT")
-    private String description;
-
     @JsonIgnore // 이 Settlement를 JSON으로 바꿀 때 Member는 무시
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "host_member_id", nullable = false)
     private Member hostMember;
+
+    @Column(name = "total_participant_count", nullable = false)
+    private Integer totalParticipantCount;
 
     @Enumerated(EnumType.STRING)
     @JdbcType(PostgreSQLEnumJdbcType.class)//enum문제 해결
@@ -50,6 +52,9 @@ public class Settlement {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
+    @Column(name = "uuid", updatable = false, nullable = false, unique = true)
+    private UUID uuid;
+
     // Settlement에 속한 영수증 목록 (양방향)
     @OneToMany(mappedBy = "settlement", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OcrReceipt> ocrReceipts = new ArrayList<>();
@@ -58,15 +63,23 @@ public class Settlement {
     @OneToMany(mappedBy = "settlement", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Participant> participants = new ArrayList<>();
 
+    // 👇 [추가] @PrePersist 메소드 추가
+    @PrePersist
+    public void createUuid() {
+        if (this.uuid == null) {
+            this.uuid = UUID.randomUUID();
+        }
+    }
+
     // 빌더 패턴을 위한 생성자
     @Builder
-    public Settlement(String title, String description, Member hostMember
+    public Settlement(String title, Member hostMember, Integer totalParticipantCount
                       //, OffsetDateTime deadline
                         ) {
         this.title = title;
-        this.description = description;
         this.hostMember = hostMember;
-        this.status = SettlementStatus.ACTIVE; // 생성 시 기본값 설정
+        this.status = SettlementStatus.VOTING; // 생성 시 기본값 설정
+        this.totalParticipantCount = totalParticipantCount;
         //this.deadline = deadline;
     }
 }

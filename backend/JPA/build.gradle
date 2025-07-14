@@ -27,14 +27,11 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	implementation 'org.springframework.boot:spring-boot-starter-web'//resourceNotFound
-
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-
 	implementation("org.hibernate.orm:hibernate-community-dialects")//enum
-
 	implementation 'org.json:json:20231013'//OcrService에 json
-
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'//임시
+	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.1.1'// AWS S3 연동을 위한 의존성 추가
 }
 
 tasks.named('test') {
