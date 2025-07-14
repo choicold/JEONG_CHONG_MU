@@ -1,34 +1,39 @@
 package demo.JPA.entity;
 
+import demo.JPA.auth.dto.KakaoUserResponse;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Setter
 @Table(name = "\"Member\"")
+@EntityListeners(AuditingEntityListener.class)
 public class Member {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // [수정] DDL에 맞춰 'name' -> 'nickname'으로 변경
-    @Column(name = "nickname", nullable = false, length = 50)
-    private String nickname;
-
-    // [수정] DDL에 맞춰 'nullable = false' 추가
-    @Column(name = "kakao_id", unique = true, nullable = false)
+    @Column(name = "kakao_id", nullable = false, unique = true)
     private Long kakaoId;
 
-    // [추가] DDL에 있는 컬럼들 추가
+    @Column(name = "nickname", length = 50)
+    private String nickname;
+
     @Column(name = "profile_image_url", length = 500)
     private String profileImageUrl;
 
@@ -41,18 +46,33 @@ public class Member {
     @Column(name = "is_default_nickname")
     private Boolean isDefaultNickname;
 
-    // [수정] DDL에 맞춰 컬럼 이름 'created_at' -> 'create_at'으로 변경
-    @CreationTimestamp
+    @CreatedDate
     @Column(name = "create_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
+    private LocalDateTime createAt;
 
-    // [수정] DDL에 맞춰 컬럼 이름 'updated_at' -> 'update_at'으로 변경
-    @UpdateTimestamp
-    @Column(name = "update_at", nullable = false)
-    private OffsetDateTime updatedAt;
+    @LastModifiedDate
+    @Column(name = "update_at")
+    private LocalDateTime updateAt;
 
-    // Member가 주최하는 정산 목록 (양방향 관계는 그대로 유지)
-    @OneToMany(mappedBy = "hostMember", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Settlement> hostedSettlements = new ArrayList<>();
+    public Member() {}
 
+    public static Member fromKakaoUSer(KakaoUserResponse kakaoUser) {
+        Member member = new Member();
+        member.kakaoId = Long.parseLong(kakaoUser.id());
+
+        if (kakaoUser.kakaoAccount() != null) {
+            var kakaoAccount = kakaoUser.kakaoAccount();
+
+            if (kakaoAccount.profile() != null) {
+                var profile = kakaoAccount.profile();
+                member.nickname = profile.nickname();
+                member.profileImageUrl = profile.profileImageUrl();
+                member.thumbnailImageUrl = profile.thumbnailImageUrl();
+                member.isDefaultImage = profile.isDefaultImage();
+                member.isDefaultNickname = profile.isDefaultNickname();
+            }
+        }
+
+        return member;
+    }
 }
