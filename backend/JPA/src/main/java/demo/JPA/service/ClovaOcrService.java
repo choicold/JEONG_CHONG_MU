@@ -114,12 +114,35 @@ public class ClovaOcrService {
                 .collect(Collectors.toList());
 
         // 총액(totalPrice) 파싱
-        BigDecimal totalPrice = Optional.ofNullable(result.getTotalPrice())
+        BigDecimal clovaTotal = Optional.ofNullable(result.getTotalPrice())
                 .map(ClovaOcrResponseDto.PriceInfo::getAsBigDecimal)
-                .filter(price -> price.compareTo(BigDecimal.ZERO) > 0)
-                .orElseGet(() -> items.stream()
-                        .map(item -> item.getItemPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
-                        .reduce(BigDecimal.ZERO, BigDecimal::add));
+                .orElse(null);
+
+        BigDecimal itemSum = items.stream()
+                .map(i -> i.getItemPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal finalTotal;
+        TotalSourceType totalSource;
+
+        if (clovaTotal == null || clovaTotal.compareTo(BigDecimal.ZERO) <= 0) {
+            finalTotal = itemSum;
+            totalSource = TotalSourceType.ITEM_SUM;
+        } else if (itemSum.compareTo(BigDecimal.ZERO) <= 0) {
+            finalTotal = clovaTotal;
+            totalSource = TotalSourceType.CLOVA_TOTAL;
+        } else {
+            BigDecimal diff = clovaTotal.subtract(itemSum).abs();
+            BigDecimal ratio = diff.divide(clovaTotal, 2, RoundingMode.HALF_UP);
+
+            if (ratio.compareTo(new BigDecimal("0.30")) > 0) {
+                finalTotal = itemSum;
+                totalSource = TotalSourceType.ITEM_SUM;
+            } else {
+                finalTotal = clovaTotal;
+                totalSource = TotalSourceType.CLOVA_TOTAL;
+            }
+        }
 
         // 상세 정보 파싱
         String storeName = Optional.ofNullable(storeInfo.getName()).map(ClovaOcrResponseDto.FormattedText::getFormattedText).orElse(null);
@@ -153,7 +176,8 @@ public class ClovaOcrService {
                 .tel(tel)
                 .receiptDate(receiptDate)
                 .paymentTime(paymentTime)
-                .totalAmount(totalPrice)
+                .totalAmount(finalTotal)        // 👈 보정된 total 변수
+                .totalSource(totalSource)
                 .items(items)
                 .build();
     }

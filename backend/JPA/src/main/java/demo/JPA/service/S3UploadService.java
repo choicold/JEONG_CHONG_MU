@@ -1,7 +1,7 @@
 package demo.JPA.service;
 
-import io.awspring.cloud.s3.S3Resource;
 import io.awspring.cloud.s3.S3Template;
+import io.awspring.cloud.s3.S3Resource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

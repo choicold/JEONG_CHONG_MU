@@ -21,6 +21,7 @@ public class OcrParseResult {
     private LocalTime paymentTime;
     private BigDecimal totalAmount;
     private List<OcrItemDto> items;
+    private TotalSourceType totalSource;
 
     @Getter
     @Builder // 👇 [수정] 이 클래스에 @Builder 어노테이션을 추가합니다.
