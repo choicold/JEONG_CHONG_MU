@@ -12,9 +12,9 @@ import java.util.UUID;
 @Repository
 public interface MemberRepository extends JpaRepository<Member, Long> {
 
-    // Kakao ID로 회원을 찾는 쿼리 메소드
+    // Kakao ID로 회원을 조회
     Optional<Member> findByKakaoId(Long kakaoId);
-    Optional<Member> findById(Long id);
 
+    // UUID로 회원을 조회
     Optional<Member> findByUuid(UUID uuid);
 }

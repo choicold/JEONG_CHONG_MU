@@ -1,19 +1,15 @@
 package demo.JPA.entity;
 
 import demo.JPA.auth.dto.KakaoUserResponse;
+import demo.JPA.notification.entity.MemberPushToken;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -46,6 +42,9 @@ public class Member {
 
     @Column(name = "is_default_nickname")
     private Boolean isDefaultNickname;
+
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<MemberPushToken> pushTokens = new ArrayList<>();
 
     @CreatedDate
     @Column(name = "create_at", nullable = false, updatable = false)

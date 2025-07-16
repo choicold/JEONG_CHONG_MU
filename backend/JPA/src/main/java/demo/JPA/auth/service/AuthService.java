@@ -1,8 +1,10 @@
 package demo.JPA.auth.service;
 
+import demo.JPA.auth.dto.KakaoLoginRequest;
 import demo.JPA.auth.dto.TokenResponse;
 import demo.JPA.config.security.JwtTokenProvider;
 import demo.JPA.entity.Member;
+import demo.JPA.notification.service.PushTokenManagementService;
 import demo.JPA.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -24,10 +26,16 @@ public class AuthService {
     private final MemberService memberService;
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisTemplate<String, String> redisTemplate;
+    private final PushTokenManagementService pushTokenManagementService;
 
-    public TokenResponse kakaoLogin(String kakaoAccessToken) {
+    public TokenResponse kakaoLogin(KakaoLoginRequest request) {
         // 1. 카카오 Access Token으로 회원가입 또는 로그인 처리
-        Member member = memberService.processKakaoLogin(kakaoAccessToken);
+        Member member = memberService.processKakaoLogin(request.accessToken());
+
+        // 2. pushToken이 요청에 포함된 경우에만 pushToken 등록 로직을 진행
+        if (request.pushToken() != null && !request.pushToken().isBlank()) {
+            pushTokenManagementService.registerToken(member, request.pushToken());
+        }
 
         // 2. Spring Security용 Authentication 객체 생성
         Authentication authentication = new UsernamePasswordAuthenticationToken(
@@ -74,8 +82,11 @@ public class AuthService {
         return new TokenResponse(newAccessToken, null);
     }
 
-    public void logout(String memberId) {
-        // Redis에서 해당 유저의 Refresh Token 삭제
-        redisTemplate.opsForValue().get("Refresh Token: " + memberId);
+    public void logout(Long memberId, String pushToken) {
+        // 1. Redis에서 해당 유저의 Refresh Token 삭제
+        redisTemplate.delete("Refresh Token: " + memberId);
+
+        // 2. DB에서 Push Token 연결 해제
+        pushTokenManagementService.deregisterToken(memberId, pushToken);
     }
 }

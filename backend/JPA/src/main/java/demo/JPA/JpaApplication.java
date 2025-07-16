@@ -7,11 +7,13 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.util.Optional;
 
 @SpringBootApplication
 @EnableJpaAuditing
+@EnableScheduling
 public class JpaApplication {
 
 	// 로그 출력을 위한 Logger 객체 생성

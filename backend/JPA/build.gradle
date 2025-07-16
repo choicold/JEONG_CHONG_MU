@@ -14,10 +14,6 @@ java {
 	}
 }
 
-repositories {
-	mavenCentral()
-}
-
 dependencies {
 	// Spring Boot Starters
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -48,6 +44,9 @@ dependencies {
 	// Database
 	runtimeOnly 'org.postgresql:postgresql'
 	runtimeOnly 'com.h2database:h2'
+
+	// Push Alarm
+	implementation 'com.github.hlspablo:expo-server-sdk-java:v3.1.2'
 
 	// Hibernate Community Dialects
 	implementation 'org.hibernate.orm:hibernate-community-dialects'

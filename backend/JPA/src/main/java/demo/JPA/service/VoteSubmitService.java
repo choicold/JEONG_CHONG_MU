@@ -1,6 +1,7 @@
 package demo.JPA.service;
 import demo.JPA.dto.VoteSubmitRequestDto;
 import demo.JPA.entity.*;
+import demo.JPA.notification.service.NotificationSendingService;
 import demo.JPA.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ public class VoteSubmitService {
     private final ParticipantRepository participantRepository;
     private final VoteRepository voteRepository;
     private final OcrItemRepository ocrItemRepository;
+    private final NotificationSendingService notificationSendingService;
 
     @Transactional
     public String submitVote(UUID uuid, VoteSubmitRequestDto requestDto) {
@@ -51,9 +53,13 @@ public class VoteSubmitService {
         }
 
         // 4. 모든 인원이 투표를 완료했는지 다시 확인
-        if (currentParticipants + 1 == settlement.getTotalParticipantCount()) {
-            settlement.setStatus(SettlementStatus.COMPLETED); // 상태 변경
-            // TODO: 여기서 총무에게 푸시 알림을 보내는 로직을 추가할 수 있습니다.
+        long finalParticipantCount = participantRepository.countBySettlementId(settlement.getId());
+        if (finalParticipantCount == settlement.getTotalParticipantCount()) {
+            settlement.setStatus(SettlementStatus.COMPLETED);
+
+            // 총무에게 푸시 알림을 보내기
+            notificationSendingService.sendCompletionNotification(settlement);
+
             return "투표가 제출되었습니다. 모든 인원이 투표를 완료하여 정산이 마감되었습니다!";
         }
 

@@ -1,5 +1,7 @@
 package demo.JPA.config.security;
 
+import demo.JPA.entity.Member;
+import demo.JPA.repository.MemberRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -28,14 +30,17 @@ public class JwtTokenProvider {
     private final Key key;
     private final long accessTokenValidityInMilliSeconds;
     private final long refreshTokenValidityInMilliSeconds;
+    private final MemberRepository memberRepository;
 
     public JwtTokenProvider(@Value("${jwt.secret}") String secretKey,
                             @Value("${jwt.access-token-validity-in-seconds}") long accessTokenValidity,
-                            @Value("${jwt.refresh-token-validity-in-seconds}") long refreshTokenValidity) {
+                            @Value("${jwt.refresh-token-validity-in-seconds}") long refreshTokenValidity,
+                            MemberRepository memberRepository) {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);
         this.accessTokenValidityInMilliSeconds = accessTokenValidity * 1000;
         this.refreshTokenValidityInMilliSeconds = refreshTokenValidity * 1000;
+        this.memberRepository = memberRepository;
     }
 
     // Access Token 생성(카카오가 주는 토큰 아님!, 앱에서 사용할 JWT)
@@ -76,13 +81,11 @@ public class JwtTokenProvider {
                 .parseClaimsJws(token)
                 .getBody();
 
-        Collection<? extends GrantedAuthority> authorities =
-                Arrays.stream(claims.get("auth").toString().split(","))
-                        .map(SimpleGrantedAuthority::new)
-                        .collect(Collectors.toList());
+        Member member = memberRepository.findById(Long.parseLong(claims.getSubject()))
+                .orElseThrow(() -> new RuntimeException("Member not found in token"));
 
-        UserDetails principal = new User(claims.getSubject(), "",authorities);
-        return new UsernamePasswordAuthenticationToken(principal, token, authorities);
+        UserDetails principal = new PrincipalDetails(member);
+        return new UsernamePasswordAuthenticationToken(principal, token, principal.getAuthorities());
     }
 
     // 토큰 유효성 검증
