@@ -1,16 +1,21 @@
 package demo.JPA.controller;
 
 import demo.JPA.dto.MemberProfileResponse;
-
+import demo.JPA.dto.SettlementSimpleResponseDto; // ✨ [추가] import
 import demo.JPA.entity.Member;
 import demo.JPA.service.MemberService;
+import demo.JPA.service.SettlementListService; // ✨ [추가] import
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable; // ✨ [추가] import
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List; // ✨ [추가] import
+import java.util.UUID;   // ✨ [추가] import
 
 @RestController
 @RequestMapping("/api/v1/members")
@@ -18,16 +23,27 @@ import org.springframework.web.bind.annotation.RestController;
 public class MemberController {
 
     private final MemberService memberService;
+    private final SettlementListService settlementListService; // ✨ [추가] 정산 목록 서비스 주입
 
-    // 로그인한 사용자의 프로필 정보를 조회하는 API
+    // (기존 코드) 로그인한 사용자의 프로필 정보를 조회하는 API
     @GetMapping("/me")
     public ResponseEntity<MemberProfileResponse> getMyProfile(@AuthenticationPrincipal UserDetails user) {
-        // @AuthenticationalPrincipal을 통해 JWT 토큰의 사용자 정보(ID)를 가져옴
         Long memberId = Long.parseLong(user.getUsername());
 
         Member member = memberService.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("id로 Member 조회 실패: " + memberId));
 
         return ResponseEntity.ok(new MemberProfileResponse(member));
+    }
+
+    /**
+     * ✨ [추가] 특정 멤버가 포함된 모든 정산 목록 조회 API
+     * @param memberUuid 조회할 멤버의 UUID
+     * @return 정산 목록 (간소화된 정보)
+     */
+    @GetMapping("/{memberUuid}/settlements")
+    public ResponseEntity<List<SettlementSimpleResponseDto>> getSettlementsForMember(@PathVariable UUID memberUuid) {
+        List<SettlementSimpleResponseDto> responseDtoList = settlementListService.getSettlementsForMember(memberUuid);
+        return ResponseEntity.ok(responseDtoList);
     }
 }

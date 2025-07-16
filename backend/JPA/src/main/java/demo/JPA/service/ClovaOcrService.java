@@ -2,6 +2,7 @@ package demo.JPA.service;
 
 import demo.JPA.dto.ClovaOcrResponseDto;
 import demo.JPA.dto.OcrParseResult;
+import demo.JPA.dto.TotalSourceType;
 import lombok.RequiredArgsConstructor;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +17,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;

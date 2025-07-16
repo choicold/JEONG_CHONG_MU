@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -53,6 +54,18 @@ public class Member {
     @LastModifiedDate
     @Column(name = "update_at")
     private LocalDateTime updateAt;
+
+    // ✨ [추가] uuid 필드 추가
+    @Column(name = "uuid", updatable = false, nullable = false, unique = true)
+    private UUID uuid;
+
+    // ✨ [추가] 엔티티 저장 전 UUID 생성
+    @PrePersist
+    public void createUuid() {
+        if (this.uuid == null) {
+            this.uuid = UUID.randomUUID();
+        }
+    }
 
     public Member() {}
 

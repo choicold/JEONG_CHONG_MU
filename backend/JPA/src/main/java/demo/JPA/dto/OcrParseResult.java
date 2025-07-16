@@ -1,6 +1,6 @@
 package demo.JPA.dto;
 
-import lombok.Builder; // Builder 임포트
+import lombok.Builder; // Builder μ„ν¬νΈ
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -24,7 +24,7 @@ public class OcrParseResult {
     private TotalSourceType totalSource;
 
     @Getter
-    @Builder // 👇 [수정] 이 클래스에 @Builder 어노테이션을 추가합니다.
+    @Builder // π‘‡ [μμ•] μ΄ ν΄λμ¤μ— @Builder μ–΄λ…Έν…μ΄μ…μ„ μ¶”κ°€ν•©λ‹λ‹¤.
     public static class OcrItemDto {
         private String itemName;
         private int quantity;
