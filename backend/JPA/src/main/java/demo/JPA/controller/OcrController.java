@@ -1,5 +1,8 @@
 package demo.JPA.controller;
 
+import demo.JPA.dto.ImageRequestDto;
+import demo.JPA.dto.OcrCorrectionRequestDto;
+import demo.JPA.dto.OcrParseResult;
 import demo.JPA.service.OcrProcessingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,50 +21,59 @@ public class OcrController {
 
     private final OcrProcessingService ocrProcessingService;
 
-    /**
-     * 사진 여러개받아서, 이미지 링크 리턴
-     * @param files
-     *  Key: file, Value: 사진1.jpg
-     *  Key: file, Value: 사진2.png
-     *  Key: file, Value: 사진3.jpg
-     *
-     * @return
-     * {
-     *   "imageUrls": [
-     *     "https://.../receipts/uuid-주소1.jpg",
-     *     "https://.../receipts/uuid-주소2.png",
-     *     "https://.../receipts/uuid-주소3.gif"
-     *   ]
-     * }
-     */
+    // (1) 이미지 업로드하고 URL만 반환
     @PostMapping("/process")
     public ResponseEntity<?> processReceipt(@RequestPart("file") List<MultipartFile> files) {
-        // 파일이 비어있는지 확인
         if (files == null || files.isEmpty() || files.stream().allMatch(MultipartFile::isEmpty)) {
             return ResponseEntity.badRequest().body("업로드할 파일을 1개 이상 선택해주세요.");
         }
 
-        // 2. 여러 개의 이미지 URL을 담을 리스트를 생성합니다.
         List<String> imageUrls = new ArrayList<>();
 
         try {
-            // 3. 반복문을 통해 각 파일을 하나씩 처리합니다.
             for (MultipartFile file : files) {
                 if (!file.isEmpty()) {
                     String imageUrl = ocrProcessingService.processReceipt(file);
-                    imageUrls.add(imageUrl); // 결과를 리스트에 추가
+                    imageUrls.add(imageUrl);
                 }
             }
 
-            // 4. 모든 이미지 URL이 담긴 리스트를 JSON 형식으로 반환합니다.
             return ResponseEntity.ok(Map.of("imageUrls", imageUrls));
 
         } catch (IOException e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body("파일 처리 중 오류가 발생했습니다: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("파일 처리 중 오류: " + e.getMessage());
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body("영수증 처리 중 오류가 발생했습니다: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("OCR 처리 중 오류: " + e.getMessage());
+        }
+    }
+
+    // (2) OCR 분석 결과 반환 (이미지 URL을 받아서 결과 제공)
+    @PostMapping("/analyze")
+    public ResponseEntity<?> analyzeReceipt(@RequestPart("file") MultipartFile file) {
+        try {
+            OcrParseResult result = ocrProcessingService.processReceiptAndReturnResult(file);
+            return ResponseEntity.ok(result);
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().body("파일 처리 오류: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("OCR 처리 중 오류 발생: " + e.getMessage());
+        }
+    }
+
+    // (3) 수정된 OCR 결과 저장
+    @PostMapping("/correct")
+    public ResponseEntity<Void> correctOcr(@RequestBody OcrCorrectionRequestDto dto) {
+        ocrProcessingService.correctOcrResult(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/save")
+    public ResponseEntity<?> saveModifiedOcr(@RequestBody OcrParseResult modifiedResult) {
+        try {
+            ocrStorageService.saveOcrResult(modifiedResult, modifiedResult.getImageUrl());
+            return ResponseEntity.ok("OCR 결과 저장 성공");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("저장 중 오류 발생: " + e.getMessage());
         }
     }
 }

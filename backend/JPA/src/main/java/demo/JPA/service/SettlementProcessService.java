@@ -40,3 +40,33 @@ public class SettlementProcessService {
         return settlementUrl;
     }
 }
+//OCR 정보가 DTO에 들어오면 그 값들을 ocrReceipt 값 업데이트 랑 ocrItem 추가
+@Transactional
+public String createSettlementProcess(SettlementCreateRequestDto requestDto) {
+    // 1. 정산 생성
+    Settlement newSettlement = settlementCreationService.createSettlement(requestDto);
+
+    // 2. OCR 결과 포함 이미지 처리
+    for (String url : requestDto.getImageUrl()) {
+        OcrReceipt ocrReceipt = ocrReceiptRepository.findByReceiptImageUrl(url)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid image URL: " + url));
+
+        // 2-1. 정산 연결
+        ocrReceipt.setSettlement(newSettlement);
+
+        // 2-2. OCR 값이 DTO에 포함되어 있다면 업데이트
+        if (requestDto.getTotalAmount() != null) {
+            ocrReceipt.setTotalPrice(requestDto.getTotalAmount());
+        }
+        if (requestDto.getReceiptDate() != null) {
+            ocrReceipt.setDate(requestDto.getReceiptDate());
+        }
+
+        // ⚠️ OCR 항목들(OcrItem)은 따로 저장해야 함 → OcrItemService.createFromDto(...) 등 따로 구현 필요
+        // 예시: ocrItemService.saveItems(ocrReceipt, requestDto.getItems());
+    }
+
+    // 3. URL 반환
+    String settlementUrl = "http://your-frontend-domain/vote/" + newSettlement.getUuid();
+    return settlementUrl;
+}
