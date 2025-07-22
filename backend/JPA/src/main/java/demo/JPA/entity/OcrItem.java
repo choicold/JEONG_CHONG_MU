@@ -23,7 +23,7 @@ import lombok.Setter;
 @Builder // 📌 [추가] Builder 어노테이션
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor // 📌 [추가]
-@Table(name = "\"OCR_Item\"")
+@Table(name = "ocr_item")
 public class OcrItem {
 
     @Id
@@ -51,4 +51,11 @@ public class OcrItem {
     // 항목에 대한 투표 목록 (양방향)
     @OneToMany(mappedBy = "ocrItem", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Vote> votes = new ArrayList<>();
+
+
+//    private Settlement settlement;
+//
+//    public void setSettlement(Settlement settlement) {
+//        this.settlement = settlement;
+//    }
 }

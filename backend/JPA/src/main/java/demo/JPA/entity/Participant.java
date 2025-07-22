@@ -15,7 +15,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(
-        name = "\"Participant\"",
+        name = "participant",
         uniqueConstraints = @UniqueConstraint(
                 name = "uq_participant_in_settlement",
                 columnNames = {"settlement_id", "participant_name"}

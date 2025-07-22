@@ -1,6 +1,11 @@
 package demo.JPA.service;
 
+import demo.JPA.dto.OcrCorrectionRequestDto;
 import demo.JPA.dto.OcrParseResult;
+import demo.JPA.entity.OcrItem;
+import demo.JPA.entity.OcrReceipt;
+import demo.JPA.entity.Settlement;
+import demo.JPA.repository.OcrReceiptRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +20,7 @@ public class OcrProcessingService {
     private final S3UploadService s3UploadService;
     private final ClovaOcrService clovaOcrService;
     private final OcrStorageService ocrStorageService;
+    private final OcrReceiptRepository ocrReceiptRepository;
 
     /**
      * OCR 항목들(OcrItem)을 정산(Settlement)과 연결하는 메서드
@@ -22,14 +28,14 @@ public class OcrProcessingService {
      * @param receipt    OCR 결과가 저장된 영수증 객체
      * @param settlement 연결할 정산 객체
      */
-    @Transactional
-    public void attachOcrItemsToSettlement(OcrReceipt receipt, Settlement settlement) {
-        if (receipt.getItems() == null || receipt.getItems().isEmpty()) return;
-
-        for (OcrItem item : receipt.getItems()) {
-            item.setSettlement(settlement); // JPA 변경 감지로 DB 업데이트됨
-        }
-    }
+//    @Transactional
+//    public void attachOcrItemsToSettlement(OcrReceipt receipt, Settlement settlement) {
+//        if (receipt.getItems() == null || receipt.getItems().isEmpty()) return;
+//
+//        for (OcrItem item : receipt.getItems()) {
+//            item.setSettlement(settlement); // JPA 변경 감지로 DB 업데이트됨
+//        }
+//    }
 
 
     @Transactional
@@ -41,10 +47,10 @@ public class OcrProcessingService {
         // 2. Clova OCR API 호출하여 결과 파싱
         OcrParseResult parseResult = clovaOcrService.callClovaOcr(file);
 
-
+        parseResult.setImageUrl(imageUrl);
 
         // 3. 파싱된 결과를 DB에 저장
-        ocrStorageService.saveOcrResult(parseResult, imageUrl); // 요청대로 imageUrl을 전달
+        ocrStorageService.saveOcrResult(parseResult); // 요청대로 imageUrl을 전달
 
         //4. 리턴
         return imageUrl;
@@ -64,4 +70,5 @@ public class OcrProcessingService {
         // 4. DB 저장은 하지 않고 결과만 반환
         return parseResult;
     }
+
 }

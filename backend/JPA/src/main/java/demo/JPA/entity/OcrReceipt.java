@@ -22,7 +22,7 @@ import lombok.AllArgsConstructor; // Builder를 위한 AllArgsConstructor 임포
 @Builder // 📌 [추가] Builder 어노테이션
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor // 📌 [추가] Builder는 모든 필드를 받는 생성자가 필요합니다.
-@Table(name = "\"OCR_Receipt\"")
+@Table(name = "ocr_receipt")
 public class OcrReceipt {
 
     @Id
@@ -77,6 +77,40 @@ public class OcrReceipt {
     public void addOcrItem(OcrItem ocrItem) {
         this.ocrItems.add(ocrItem); // 영수증의 항목 리스트에 아이템을 추가하고,
         ocrItem.setOcrReceipt(this); // 아이템 쪽에도 현재 영수증을 주인으로 설정해줍니다.
+    }
+
+    public List<OcrItem> getItems() {
+        return this.ocrItems;
+    }
+
+    public void setImageUrl(String url) {
+        this.receiptImageUrl = url;
+    }
+
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+    public void setReceiptDate(LocalDate date) {
+        this.receiptDate = date;
+    }
+    public void setStoreName(String storeName) {
+        this.storeName = storeName;
+    }
+
+    public void setStoreBranch(String storeBranch) {
+        this.storeBranch = storeBranch;
+    }
+    public void setBizNum(String bizNum) {
+        this.bizNum = bizNum;
+    }
+    public void setAddress(String address) {
+        this.address = address;
+    }
+    public void setTel(String tel) {
+        this.tel = tel;
+    }
+    public void setPaymentTime(LocalTime time) {
+        this.paymentTime = time;
     }
 
 }

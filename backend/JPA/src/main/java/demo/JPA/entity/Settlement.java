@@ -18,7 +18,7 @@ import org.hibernate.annotations.GenericGenerator;
 @Getter
 @Setter//지우기
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "\"Settlement\"")
+@Table(name = "settlement")
 public class Settlement {
 
     @Id

@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "\"MemberPushToken\"")
+@Table(name = "member_push_token")
 public class MemberPushToken {
 
     @Id

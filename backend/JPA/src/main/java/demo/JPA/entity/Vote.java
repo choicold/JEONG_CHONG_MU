@@ -11,7 +11,7 @@ import java.time.OffsetDateTime;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "\"Vote\"")
+@Table(name = "vote")
 public class Vote {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

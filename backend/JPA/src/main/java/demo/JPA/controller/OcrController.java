@@ -1,9 +1,10 @@
 package demo.JPA.controller;
 
-import demo.JPA.dto.ImageRequestDto;
+//import demo.JPA.dto.ImageRequestDto;
 import demo.JPA.dto.OcrCorrectionRequestDto;
 import demo.JPA.dto.OcrParseResult;
 import demo.JPA.service.OcrProcessingService;
+import demo.JPA.service.OcrStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +21,7 @@ import java.util.Map;
 public class OcrController {
 
     private final OcrProcessingService ocrProcessingService;
+    private final OcrStorageService ocrStorageService;
 
     // (1) 이미지 업로드하고 URL만 반환
     @PostMapping("/process")
@@ -60,17 +62,11 @@ public class OcrController {
         }
     }
 
-    // (3) 수정된 OCR 결과 저장
-    @PostMapping("/correct")
-    public ResponseEntity<Void> correctOcr(@RequestBody OcrCorrectionRequestDto dto) {
-        ocrProcessingService.correctOcrResult(dto);
-        return ResponseEntity.ok().build();
-    }
-
+    // (3) 사용자 수정 OCR 결과를 저장함.
     @PostMapping("/save")
     public ResponseEntity<?> saveModifiedOcr(@RequestBody OcrParseResult modifiedResult) {
         try {
-            ocrStorageService.saveOcrResult(modifiedResult, modifiedResult.getImageUrl());
+            ocrStorageService.saveOcrResult(modifiedResult );
             return ResponseEntity.ok("OCR 결과 저장 성공");
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("저장 중 오류 발생: " + e.getMessage());

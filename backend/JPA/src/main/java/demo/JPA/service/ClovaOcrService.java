@@ -110,7 +110,7 @@ public class ClovaOcrService {
                             .map(ClovaOcrResponseDto.PriceInfo::getAsBigDecimal)
                             .orElse(BigDecimal.ZERO);
                     return OcrParseResult.OcrItemDto.builder()
-                            .itemName(name).quantity(quantity).itemPrice(price)
+                            .name(name).count(quantity).price(price)
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -121,7 +121,7 @@ public class ClovaOcrService {
                 .orElse(null);
 
         BigDecimal itemSum = items.stream()
-                .map(i -> i.getItemPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
+                .map(i -> i.getPrice().multiply(BigDecimal.valueOf(i.getCount())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal finalTotal;

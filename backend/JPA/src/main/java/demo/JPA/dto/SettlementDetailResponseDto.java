@@ -30,7 +30,7 @@ public class SettlementDetailResponseDto {
     // == 정적 팩토리 메소드 (엔티티 -> DTO 변환) == //
     public static SettlementDetailResponseDto from(Settlement settlement, List<Participant> participantList, OcrReceipt receipt) {
         OcrResultDto ocrResultDto = (receipt != null) ? OcrResultDto.from(receipt) : null;
-        String serverBaseUrl = "YOUR_SERVER_ADDRESS"; // TODO: 실제 서버 주소로 변경 필요
+        String serverBaseUrl = "https://stable-finally-jaybird.ngrok-free.app"; // TODO: 실제 서버 주소로 변경 필요
 
         return SettlementDetailResponseDto.builder()
                 .id(settlement.getUuid().toString())

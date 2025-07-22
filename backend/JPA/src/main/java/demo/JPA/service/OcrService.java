@@ -42,9 +42,9 @@ public class OcrService {
         List<OcrItem> items = parseResult.getItems().stream()
                 .map(dto -> OcrItem.builder()
                         .ocrReceipt(receipt)  // FK 연결
-                        .itemName(dto.getItemName())
-                        .itemPrice(dto.getItemPrice())
-                        .quantity(dto.getQuantity())
+                        .itemName(dto.getName())
+                        .itemPrice(dto.getPrice())
+                        .quantity(dto.getCount()    )
                         .build())
                 .collect(Collectors.toList());
 

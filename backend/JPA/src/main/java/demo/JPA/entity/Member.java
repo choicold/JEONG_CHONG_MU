@@ -17,7 +17,7 @@ import java.util.UUID;
 @Entity
 @Getter
 @Setter
-@Table(name = "\"Member\"")
+@Table(name = "member")
 @EntityListeners(AuditingEntityListener.class)
 public class Member {
 
