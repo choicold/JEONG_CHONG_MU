@@ -17,10 +17,10 @@ public class SettlementCreationService {
     private final MemberRepository memberRepository;
 
     @Transactional
-    public Settlement createSettlement(SettlementCreateRequestDto requestDto) {
+    public Settlement createSettlement(SettlementCreateRequestDto requestDto, Long hostMemberId) {
 
-        Member host = memberRepository.findById(requestDto.getHostMemberId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid host member ID: " + requestDto.getHostMemberId()));
+        Member host = memberRepository.findById(hostMemberId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid host member ID: " + hostMemberId));
 
         Settlement newSettlement = Settlement.builder()
                 .title(requestDto.getTitle())

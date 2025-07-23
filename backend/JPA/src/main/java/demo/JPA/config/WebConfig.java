@@ -15,7 +15,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "http://localhost:8080",
                         "http://127.0.0.1:5500",
                         "null",
-                        "https://0117d85c4f49.ngrok-free.app" // ngrok 주소 추가
+                        "https://stable-finally-jaybird.ngrok-free.app" // ngrok 주소 추가
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                 .allowedHeaders("*")

@@ -22,17 +22,18 @@ public class SettlementListService {
     private final MemberRepository memberRepository;
     private final SettlementRepository settlementRepository;
 
-    public List<SettlementSimpleResponseDto> getSettlementsForMember(UUID memberUuid) {
-        // 1. memberUuid를 사용하여 Member 엔티티를 찾습니다.
-        Member member = memberRepository.findByUuid(memberUuid)
-                .orElseThrow(() -> new EntityNotFoundException("해당 UUID를 가진 멤버를 찾을 수 없습니다: " + memberUuid));
+    // ✨ [수정 또는 추가] 인증된 사용자의 ID를 직접 받아 처리하는 메서드
+    public List<SettlementSimpleResponseDto> getSettlementsForAuthenticatedUser(Long userId) {
+        // 1. userId로 Member 엔티티를 찾습니다.
+        Member member = memberRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("해당 ID를 가진 멤버를 찾을 수 없습니다: " + userId));
 
-        // 2. Repository에 추가한 쿼리 메소드를 호출하여 정산 목록을 가져옵니다.
+        // 2. Repository의 기존 쿼리 메소드를 호출하여 정산 목록을 가져옵니다.
         List<Settlement> settlements = settlementRepository.findSettlementsByMember(member.getId(), member.getNickname());
 
-        // 3. 조회된 Settlement 엔티티 목록을 SettlementSimpleResponseDto 목록으로 변환합니다.
+        // 3. DTO 목록으로 변환하여 반환합니다.
         return settlements.stream()
-                .map(SettlementSimpleResponseDto::new) // DTO의 생성자를 사용하여 변환
+                .map(SettlementSimpleResponseDto::new)
                 .collect(Collectors.toList());
     }
 }

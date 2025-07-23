@@ -35,15 +35,4 @@ public class MemberController {
 
         return ResponseEntity.ok(new MemberProfileResponse(member));
     }
-
-    /**
-     * ✨ [추가] 특정 멤버가 포함된 모든 정산 목록 조회 API
-     * @param memberUuid 조회할 멤버의 UUID
-     * @return 정산 목록 (간소화된 정보)
-     */
-    @GetMapping("/{memberUuid}/settlements")
-    public ResponseEntity<List<SettlementSimpleResponseDto>> getSettlementsForMember(@PathVariable UUID memberUuid) {
-        List<SettlementSimpleResponseDto> responseDtoList = settlementListService.getSettlementsForMember(memberUuid);
-        return ResponseEntity.ok(responseDtoList);
-    }
 }
