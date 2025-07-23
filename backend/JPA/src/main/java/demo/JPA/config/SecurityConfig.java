@@ -33,7 +33,11 @@ public class SecurityConfig {
 
                 // 요청 경로별 권한 설정
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers(
+                                "/api/v1/auth/**",
+                                "/vote/**",
+                                "/api/vote/**"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
 

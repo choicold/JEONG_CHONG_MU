@@ -1,5 +1,7 @@
 package demo.JPA.controller;
 
+import demo.JPA.config.security.PrincipalDetails;
+import demo.JPA.dto.MemberAccountUpdateRequestDto;
 import demo.JPA.dto.MemberProfileResponse;
 import demo.JPA.dto.SettlementSimpleResponseDto; // ✨ [추가] import
 import demo.JPA.entity.Member;
@@ -9,10 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable; // ✨ [추가] import
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List; // ✨ [추가] import
 import java.util.UUID;   // ✨ [추가] import
@@ -34,5 +33,16 @@ public class MemberController {
                 .orElseThrow(() -> new RuntimeException("id로 Member 조회 실패: " + memberId));
 
         return ResponseEntity.ok(new MemberProfileResponse(member));
+    }
+
+    // 로그인한 사용자의 계좌 정보 등록/수정 API
+    @PatchMapping("/me/account")
+    public ResponseEntity<Void> updateMyAccountInfo(
+            @AuthenticationPrincipal PrincipalDetails principalDetails,
+            @RequestBody MemberAccountUpdateRequestDto requestDto) {
+
+        Long memberId = Long.parseLong(principalDetails.getUsername());
+        memberService.updateAccountInfo(memberId, requestDto);
+        return ResponseEntity.ok().build();
     }
 }

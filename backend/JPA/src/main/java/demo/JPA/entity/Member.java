@@ -66,6 +66,13 @@ public class Member {
         }
     }
 
+    // 카카오 로그인으로 회원가입 이후 로그인 시 입력받아야할 계좌정보
+    @Column(name = "bank_name", length = 50)
+    private String bankName;
+
+    @Column(name = "account_number", length = 100)
+    private String accountNumber;
+
     public Member() {}
 
     public static Member fromKakaoUSer(KakaoUserResponse kakaoUser) {

@@ -2,6 +2,7 @@ package demo.JPA.service;
 
 import demo.JPA.auth.dto.KakaoUserResponse;
 import demo.JPA.auth.service.KakaoUserService;
+import demo.JPA.dto.MemberAccountUpdateRequestDto;
 import demo.JPA.entity.Member;
 import demo.JPA.repository.MemberRepository;
 import org.springframework.stereotype.Service;
@@ -56,6 +57,16 @@ public class MemberService {
                 member.setIsDefaultNickname(profile.isDefaultNickname());
             }
         }
+    }
+
+    // 회원 계좌 정보 업데이트
+    public void updateAccountInfo(Long memberId, MemberAccountUpdateRequestDto requestDto) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("id로 Member 조회 실패: " + memberId));
+
+        member.setBankName(requestDto.getBankName());
+        member.setAccountNumber(requestDto.getAccountNumber());
+        // memberRepository.save(member)는 @Transactional에 의해 자동 처리됩니다.
     }
 
     // 카카오 ID로 회원 조회
