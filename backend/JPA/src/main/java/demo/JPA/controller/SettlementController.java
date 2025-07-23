@@ -2,6 +2,7 @@ package demo.JPA.controller;
 
 import demo.JPA.config.security.PrincipalDetails;
 import demo.JPA.dto.*;
+import demo.JPA.entity.Member;
 import demo.JPA.service.SettlementListService;
 import demo.JPA.service.SettlementProcessService;
 import demo.JPA.service.SettlementDetailService;
@@ -35,9 +36,9 @@ public class SettlementController {
                                                                         @AuthenticationPrincipal PrincipalDetails principalDetails) {
 
         // 서비스 호출하여 정산 생성 프로세스 처리
-        Long hostMemberId = principalDetails.getMember().getId();
+        Member host = principalDetails.getMember();
 
-        String settlementUrl = settlementProcessService.createSettlementProcess(requestDto, hostMemberId);
+        String settlementUrl = settlementProcessService.createSettlementProcess(requestDto, host);
         SettlementCreateResponseDto responseDto = new SettlementCreateResponseDto(settlementUrl);//json 생성
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }

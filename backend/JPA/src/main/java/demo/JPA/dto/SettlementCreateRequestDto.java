@@ -42,7 +42,7 @@ public class SettlementCreateRequestDto {
     @Getter
     public static class OcrDataDto {
         // --- 영수증 정보 (OCR 결과) ---
-        private List<String> imageUrl; // 영수증이 여러 장일 경우를 대비해 List 유지
+        private String imageUrl; // 영수증이 여러 장일 경우를 대비해 List 유지(나중에 업데이트 할 때 반영)
         private String storeName;
         private String storeBranch;
         private String bizNum;
