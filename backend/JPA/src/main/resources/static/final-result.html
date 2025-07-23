@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>정산 결과 확인</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f0f2f5;}
+        .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 90%;}
+        h2 { margin-top: 0; }
+        input[type="text"] { width: calc(100% - 22px); padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 5px; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 5px; background-color: #007bff; color: white; font-size: 1em; cursor: pointer; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        .amount { font-size: 2.5em; font-weight: bold; color: #dc3545; margin: 20px 0; }
+        .toss-button { background-color: #3182f6; }
+        .error-message { color: #dc3545; margin-top: 10px; font-size: 0.9em; }
+        .debug-info { background-color: #f8f9fa; padding: 15px; margin: 15px 0; border-radius: 5px; font-size: 0.8em; text-align: left; }
+        .help-text { font-size: 0.9em; color: #6c757d; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+<div id="name-entry-card" class="card">
+    <h2>정산 결과 확인</h2>
+    <p>정산에 참여하신 이름을 입력해주세요.</p>
+    <div class="help-text">
+        💡 팁: 정산 등록 시 사용한 이름과 정확히 동일하게 입력해주세요.<br>
+        (공백, 대소문자도 일치해야 합니다)
+    </div>
+    <input type="text" id="participant-name-input" placeholder="예: 홍길동">
+    <button id="confirm-name-btn">결과 확인하기</button>
+    <div id="error-message" class="error-message" style="display: none;"></div>
+    <div id="debug-info" class="debug-info" style="display: none;"></div>
+</div>
+
+<div id="result-card" class="card" style="display:none;">
+    <h2><span id="result-name"></span>님의 정산 결과</h2>
+    <p>총무에게 보내야 할 금액입니다.</p>
+    <div class="amount"><span id="result-amount"></span>원</div>
+    <a id="toss-link-btn" href="#" style="text-decoration: none;">
+        <button class="toss-button">토스로 송금하기</button>
+    </a>
+</div>
+
+<script>
+    const confirmBtn = document.getElementById('confirm-name-btn');
+    const nameInput = document.getElementById('participant-name-input');
+    const errorDiv = document.getElementById('error-message');
+    const debugDiv = document.getElementById('debug-info');
+
+    function showError(message, debugInfo = null) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+
+        if (debugInfo) {
+            debugDiv.innerHTML = `<strong>디버그 정보:</strong><br>${debugInfo}`;
+            debugDiv.style.display = 'block';
+        }
+    }
+
+    function hideError() {
+        errorDiv.style.display = 'none';
+        debugDiv.style.display = 'none';
+    }
+
+    // 입력값 정리 함수
+    function sanitizeName(name) {
+        return name.trim()
+            .replace(/\s+/g, ' ') // 연속된 공백을 하나로
+            .replace(/[^\w\s가-힣]/g, ''); // 특수문자 제거 (한글, 영문, 숫자, 공백만 허용)
+    }
+
+    confirmBtn.addEventListener('click', async () => {
+        hideError();
+
+        const rawName = nameInput.value;
+        const participantName = sanitizeName(rawName);
+
+        if (!participantName) {
+            showError('올바른 이름을 입력해주세요.');
+            return;
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const settlementUuid = urlParams.get('uuid');
+
+        if (!settlementUuid) {
+            showError('잘못된 링크입니다. URL에서 uuid 파라미터를 찾을 수 없습니다.');
+            return;
+        }
+
+        // UUID 형식 검증 (선택사항)
+        const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidPattern.test(settlementUuid)) {
+            showError('잘못된 UUID 형식입니다.', `UUID: ${settlementUuid}`);
+            return;
+        }
+
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = '확인 중...';
+
+        try {
+            const requestBody = {
+                participantName: participantName
+            };
+
+            console.log('요청 데이터:', requestBody);
+            console.log('요청 URL:', `/api/final-result/${settlementUuid}`);
+
+            const response = await fetch(`/api/final-result/${settlementUuid}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            console.log('응답 상태:', response.status);
+            console.log('응답 헤더:', response.headers);
+
+            const responseText = await response.text();
+            console.log('응답 내용:', responseText);
+
+            let responseData;
+            try {
+                responseData = JSON.parse(responseText);
+            } catch (parseError) {
+                throw new Error(`서버 응답을 파싱할 수 없습니다: ${responseText.substring(0, 100)}...`);
+            }
+
+            if (!response.ok) {
+                const errorMessage = responseData.message || `서버 오류 (${response.status})`;
+                let debugInfo = `상태 코드: ${response.status}<br>`;
+                debugInfo += `입력한 이름: "${participantName}"<br>`;
+                debugInfo += `원본 입력: "${rawName}"<br>`;
+                debugInfo += `UUID: ${settlementUuid}<br>`;
+                debugInfo += `서버 응답: ${JSON.stringify(responseData, null, 2)}`;
+
+                throw new Error(errorMessage + '|||' + debugInfo);
+            }
+
+            const myResult = responseData;
+
+            // 결과 표시
+            document.getElementById('result-name').textContent = myResult.participantName;
+            document.getElementById('result-amount').textContent = myResult.amountToPay.toLocaleString();
+
+            const tossBtn = document.getElementById('toss-link-btn');
+            if(myResult.tossPayLink) {
+                tossBtn.href = myResult.tossPayLink;
+                tossBtn.style.display = 'block';
+            } else {
+                tossBtn.style.display = 'none';
+            }
+
+            // 화면 전환
+            document.getElementById('name-entry-card').style.display = 'none';
+            document.getElementById('result-card').style.display = 'block';
+
+        } catch (error) {
+            console.error('오류 발생:', error);
+
+            const errorParts = error.message.split('|||');
+            const errorMessage = errorParts[0];
+            const debugInfo = errorParts[1] || null;
+
+            showError(errorMessage, debugInfo);
+        } finally {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = '결과 확인하기';
+        }
+    });
+
+    // 엔터키로도 확인 가능하게
+    nameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            confirmBtn.click();
+        }
+    });
+</script>
+</body>
+</html>

@@ -36,7 +36,9 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/v1/auth/**",
                                 "/vote/**",
-                                "/api/vote/**"
+                                "/api/vote/**",
+                                "/*.html",
+                                "/api/final-result/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

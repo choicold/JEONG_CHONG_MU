@@ -49,4 +49,10 @@ public class Participant {
         this.participantName = participantName;
         this.submittedAt = OffsetDateTime.now(); // 생성 시 제출된 것으로 간주
     }
+
+    public void updateName(String newName) {
+        if (newName != null && !newName.isBlank()) {
+            this.participantName = newName;
+        }
+    }
 }

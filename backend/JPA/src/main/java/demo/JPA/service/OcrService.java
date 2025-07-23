@@ -44,7 +44,7 @@ public class OcrService {
                         .ocrReceipt(receipt)  // FK 연결
                         .itemName(dto.getName())
                         .itemPrice(dto.getPrice())
-                        .quantity(dto.getCount()    )
+                        .quantity(dto.getCount())
                         .build())
                 .collect(Collectors.toList());
 

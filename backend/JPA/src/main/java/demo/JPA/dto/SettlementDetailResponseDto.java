@@ -24,13 +24,29 @@ public class SettlementDetailResponseDto {
     private int memberCount; // Settlement.total_participant_count
     private String receiptImg; // OCR_Receipt.receipt_image_url
     private OcrResultDto resultOfOCR;
-    private List<String> participants;
+    private List<ParticipantStatusDto> participants;
     private String votePageLink;
+
+    // 참여자의 이름과 투표 상태를 담는 내부 DTO
+    @Getter
+    @Builder
+    public static class ParticipantStatusDto {
+        private String name;
+        private boolean hasVoted;
+    }
 
     // == 정적 팩토리 메소드 (엔티티 -> DTO 변환) == //
     public static SettlementDetailResponseDto from(Settlement settlement, List<Participant> participantList, OcrReceipt receipt) {
         OcrResultDto ocrResultDto = (receipt != null) ? OcrResultDto.from(receipt) : null;
         String serverBaseUrl = "https://stable-finally-jaybird.ngrok-free.app"; // TODO: 실제 서버 주소로 변경 필요
+
+        // 참여자 목록을 ParticipantStatusDto 목록으로 변환
+        List<ParticipantStatusDto> participantStatuses = participantList.stream()
+                .map(p -> ParticipantStatusDto.builder()
+                        .name(p.getParticipantName())
+                        .hasVoted(p.getSubmittedAt() != null) // submittedAt 필드가 존재하면 투표 완료
+                        .build())
+                .collect(Collectors.toList());
 
         return SettlementDetailResponseDto.builder()
                 .id(settlement.getUuid().toString())
@@ -40,9 +56,7 @@ public class SettlementDetailResponseDto {
                 .memberCount(settlement.getTotalParticipantCount())
                 .receiptImg((receipt != null) ? receipt.getReceiptImageUrl() : null)
                 .resultOfOCR(ocrResultDto)
-                .participants(participantList.stream()
-                        .map(Participant::getParticipantName)
-                        .collect(Collectors.toList()))
+                .participants(participantStatuses)
                 .votePageLink(serverBaseUrl + "/vote/" + settlement.getUuid().toString())
                 .build();
     }
@@ -55,10 +69,10 @@ public class SettlementDetailResponseDto {
         switch (status) {
             case VOTING: return "투표 진행 중";
             case COMPLETED: return "정산 완료";
+            case FINALIZED: return "정산 확정";
             default: return "알 수 없음";
         }
     }
-
 
     // --- 내부 DTO 클래스들 ---
 

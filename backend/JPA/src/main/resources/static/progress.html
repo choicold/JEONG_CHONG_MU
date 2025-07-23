@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>정산 현황</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 20px; background-color: #f8f9fa; display: flex; justify-content: center; align-items: center; min-height: 100vh;}
+        .container { max-width: 500px; width: 100%; background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        h1 { color: #343a40; text-align: center; margin-bottom: 30px; }
+        .participant-list { list-style: none; padding: 0; }
+        .participant-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #e9ecef; font-size: 1.1em; }
+        .participant-item:last-child { border-bottom: none; }
+        .status { font-weight: bold; }
+        .status.voted { color: #28a745; }
+        .status.waiting { color: #ffc107; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 id="settlement-title">정산 현황 로딩 중...</h1>
+    <ul class="participant-list" id="participant-list"></ul>
+</div>
+
+<script>
+    async function loadSettlementStatus() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const settlementUuid = urlParams.get('uuid');
+
+        if (!settlementUuid) {
+            document.getElementById('settlement-title').textContent = '잘못된 접근입니다.';
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/settlements/${settlementUuid}`);
+            if (!response.ok) throw new Error('정산 정보를 불러오는데 실패했습니다.');
+
+            const data = await response.json();
+
+            document.getElementById('settlement-title').textContent = `"${data.title}" 현황`;
+            const listElement = document.getElementById('participant-list');
+            listElement.innerHTML = ''; // 리스트 초기화
+
+            data.participants.forEach(p => {
+                const item = document.createElement('li');
+                item.className = 'participant-item';
+
+                const statusSpan = p.hasVoted
+                    ? '<span class="status voted">투표 완료 ✅</span>'
+                    : '<span class="status waiting">투표 대기 ⏳</span>';
+
+                item.innerHTML = `<span>${p.name}</span> ${statusSpan}`;
+                listElement.appendChild(item);
+            });
+
+        } catch (error) {
+            document.getElementById('settlement-title').textContent = error.message;
+        }
+    }
+
+    // 페이지 로드 시 데이터 조회 함수 실행
+    window.onload = loadSettlementStatus;
+</script>
+</body>
+</html>
