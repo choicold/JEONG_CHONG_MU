@@ -5,14 +5,18 @@ import demo.JPA.entity.Member;
 import demo.JPA.entity.OcrItem;
 import demo.JPA.entity.OcrReceipt;
 import demo.JPA.entity.Settlement;
-import demo.JPA.repository.MemberRepository;
 import demo.JPA.repository.OcrItemRepository;
 import demo.JPA.repository.OcrReceiptRepository;
+import demo.JPA.repository.SettlementRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,6 +26,7 @@ public class SettlementProcessService {
     private final SettlementCreationService settlementCreationService;
     private final OcrReceiptRepository ocrReceiptRepository; // 👇 [추가] DI 추가
     private final OcrItemRepository ocrItemRepository;
+    private final SettlementRepository settlementRepository;
 
     @Transactional
     public String createSettlementProcess(SettlementCreateRequestDto requestDto, Member host) {
@@ -72,4 +77,21 @@ public class SettlementProcessService {
         return settlementUrl;
     }
 
+    // 정산 삭제
+    @Transactional
+    public void deleteSettlement(UUID settlementUuid, Member currentUser) {
+        // 1. UUID로 데이터베이스에서 정산 정보를 찾고, 없으면 예외를 발생 시키기
+        Settlement settlement = settlementRepository.findByUuid(settlementUuid)
+                .orElseThrow(() -> new EntityNotFoundException("해당 UUID의 정산을 찾을 수 없습니다: " + settlementUuid));
+
+        // 2. 현재 로그인한 사용자가 정산의 호스트인지 확인
+        if (!settlement.getHostMember().getId().equals(currentUser.getId())) {
+            // 호스트가 아니라면, 권한 없음 예외를 발생시켜 작업을 중단
+            throw new AccessDeniedException("해당 정산을 삭제할 권한이 없습니다.");
+        }
+
+        // 3. 권한이 확인되면 정산을 삭제
+        // 연관된 모든 데이터(영수증, 항목, 참여자, 투표)는 엔티티 Casacsde 설정으로 인해 자동으로 함께 삭제
+        settlementRepository.delete(settlement);
+    }
 }

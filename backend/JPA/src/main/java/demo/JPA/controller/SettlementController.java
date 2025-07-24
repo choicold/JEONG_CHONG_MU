@@ -13,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*; // GetMapping, PostMapping 등 포함
-import demo.JPA.config.security.PrincipalDetails;
 
 import java.util.List;
 import java.util.Map;
@@ -29,7 +28,6 @@ public class SettlementController {
     private final SettlementSearchDataService settlementSearchDataService;
     private final SettlementListService settlementListService;
     private final VoteSubmitService voteSubmitService;
-    private final OcrService ocrService;
     private final SettlementFinalizationService settlementFinalizationService;
     private final SettlementRepository settlementRepository;
     private final SettlementCorrectionService settlementCorrectionService;
@@ -101,9 +99,7 @@ public class SettlementController {
         return ResponseEntity.ok(message);
     }
 
-    /**
-     * 총무가 최종 정산 전 참여자 이름과 OcrItem(true/false)만 수정하는 API
-     */
+    // 총무가 최종 정산 전 참여자 이름과 OcrItem(true/false)만 수정하는 API
     @PutMapping("/{settlementUuid}/corrections")
     public ResponseEntity<Void> applyFinalCorrections(
             @PathVariable UUID settlementUuid,
@@ -132,5 +128,17 @@ public class SettlementController {
         String finalLink = settlementFinalizationService.finalizeAndGenerateLink(settlementUuid);
         Map<String, String> response = Map.of("finalResultLink", finalLink);
         return ResponseEntity.ok(response);
+    }
+
+    // 정산 삭제 API
+    @DeleteMapping("/{settlementUuid}")
+    public ResponseEntity<Void> deleteSettlement(
+            @PathVariable UUID settlementUuid,
+            @AuthenticationPrincipal PrincipalDetails principalDetails) {
+
+        settlementProcessService.deleteSettlement(settlementUuid, principalDetails.getMember());
+
+        // 삭제가 완료되면 204 No Content 상태를 반환
+        return ResponseEntity.noContent().build();
     }
 }
