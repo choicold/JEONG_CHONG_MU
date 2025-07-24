@@ -41,6 +41,7 @@ public class OcrItem {
     @Column(name = "item_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal itemPrice;
 
+    @Builder.Default
     @Column(name = "quantity", nullable = false)
     private Integer quantity = 1;
 
@@ -49,6 +50,7 @@ public class OcrItem {
     private OffsetDateTime createdAt;
 
     // 항목에 대한 투표 목록 (양방향)
+    @Builder.Default
     @OneToMany(mappedBy = "ocrItem", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Vote> votes = new ArrayList<>();
 
