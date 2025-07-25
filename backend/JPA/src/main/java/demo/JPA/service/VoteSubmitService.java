@@ -69,7 +69,6 @@ public class VoteSubmitService {
             // 모든 인원이 투표 완료했는지 다시 확인
             long finalParticipantCount = participantRepository.countBySettlementId(settlement.getId());
             if (finalParticipantCount == settlement.getTotalParticipantCount()) {
-                settlement.setStatus(SettlementStatus.COMPLETED);
                 notificationSendingService.sendCompletionNotification(settlement);
                 return "투표가 제출되었습니다. 모든 인원이 투표를 완료하여 정산이 마감되었습니다!";
             }

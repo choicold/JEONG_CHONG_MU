@@ -68,7 +68,6 @@ public class SettlementDetailResponseDto {
         }
         switch (status) {
             case VOTING: return "투표 진행 중";
-            case COMPLETED: return "정산 완료";
             case FINALIZED: return "정산 확정";
             default: return "알 수 없음";
         }

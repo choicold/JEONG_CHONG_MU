@@ -56,7 +56,7 @@ public class VotePageLoadService {
                 .collect(Collectors.toList());
 
         boolean allVoted = voteStatuses.size() == settlement.getTotalParticipantCount()
-                && voteStatuses.stream().allMatch(VotePageLoadDto.VoteStatusDto::hasVoted);
+                && voteStatuses.stream().allMatch(VotePageLoadDto.VoteStatusDto::isHasVoted);
 
         return new VotePageLoadDto(
                 settlement.getTitle(),

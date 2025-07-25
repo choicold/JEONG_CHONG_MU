@@ -39,7 +39,8 @@ public class SecurityConfig {
                                 "/api/vote/**",
                                 "/*.html",
                                 "/api/final-result/**",
-                                "/api/health"//로드밸런서
+                                "/api/health",//로드밸런서
+                                "/api/settlements/*/finalize"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
