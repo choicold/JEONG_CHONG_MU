@@ -48,4 +48,11 @@ public class VoteApiController {
         ParticipantChoicesResponseDto choices = votePageLoadService.getParticipantChoices(uuid, participantName);
         return ResponseEntity.ok(choices);
     }
+
+    // 전체 항목별 투표 결과 조회 (이름까지)
+    @GetMapping("/{uuid}/results")
+    public ResponseEntity<VoteResultDto> getVoteResults(@PathVariable UUID uuid) {
+        VoteResultDto results = votePageLoadService.getVoteResults(uuid);
+        return ResponseEntity.ok(results);
+    }
 }
