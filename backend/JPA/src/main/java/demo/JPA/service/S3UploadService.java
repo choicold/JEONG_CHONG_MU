@@ -30,7 +30,7 @@ public class S3UploadService {
     public String upload(MultipartFile file, String dirName) throws IOException {
         // 1. 임의의 토큰(UUID)과 원본 파일명을 조합하여 고유한 파일 이름 생성
         String originalFilename = file.getOriginalFilename();
-        String uniqueFileName = dirName + "/" + UUID.randomUUID().toString() + "_" + originalFilename;
+        String uniqueFileName = dirName + "/" + UUID.randomUUID().toString();
 
         // 2. S3Template을 사용하여 파일을 업로드하고, 업로드된 리소스의 URL을 가져옴
         S3Resource resource = s3Template.upload(bucketName, uniqueFileName, file.getInputStream());

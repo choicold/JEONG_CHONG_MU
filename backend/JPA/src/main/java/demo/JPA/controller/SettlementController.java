@@ -88,16 +88,16 @@ public class SettlementController {
         return ResponseEntity.ok(result);
     }
 
-    // 총무를 위한 인앱 투표 제출 API
-    @PostMapping("/{settlementUuid}/vote")
-    public ResponseEntity<String> submitVoteAuthenticated(
-            @PathVariable UUID settlementUuid,
-            @AuthenticationPrincipal PrincipalDetails principalDetails,
-            @RequestBody AuthenticatedVoteSubmitRequestDto requestDto) {
-
-        String message = voteSubmitService.submitVote(settlementUuid, requestDto, principalDetails.getMember());
-        return ResponseEntity.ok(message);
-    }
+//    // 총무를 위한 인앱 투표 제출 API
+//    @PostMapping("/{settlementUuid}/vote")
+//    public ResponseEntity<String> submitVoteAuthenticated(
+//            @PathVariable UUID settlementUuid,
+//            @AuthenticationPrincipal PrincipalDetails principalDetails,
+//            @RequestBody AuthenticatedVoteSubmitRequestDto requestDto) {
+//
+//        String message = voteSubmitService.submitVote(settlementUuid, requestDto, principalDetails.getMember());
+//        return ResponseEntity.ok(message);
+//    }
 
     // 총무가 최종 정산 전 참여자 이름과 OcrItem(true/false)만 수정하는 API
     @PutMapping("/{settlementUuid}/corrections")

@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 
 
 import java.util.List;
@@ -27,6 +28,10 @@ public class SettlementProcessService {
     private final OcrReceiptRepository ocrReceiptRepository; // 👇 [추가] DI 추가
     private final OcrItemRepository ocrItemRepository;
     private final SettlementRepository settlementRepository;
+
+    @Value("${domain.url}")
+    private String URL;
+
 
     @Transactional
     public String createSettlementProcess(SettlementCreateRequestDto requestDto, Member host) {
@@ -73,7 +78,8 @@ public class SettlementProcessService {
         // 4. URL 반환
         // settlementRepository.save(newSettlement)를 명시적으로 호출할 필요가 없습니다.
         // 트랜잭션이 끝날 때 변경된 newSettlement가 자동으로 DB에 반영(dirty checking)됩니다.
-        String settlementUrl = "https://stable-finally-jaybird.ngrok-free.app/vote/" + newSettlement.getUuid();
+
+        String settlementUrl = URL + "/vote/" +newSettlement.getUuid();
         return settlementUrl;
     }
 

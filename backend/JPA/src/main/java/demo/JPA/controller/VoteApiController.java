@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
+import demo.JPA.dto.ParticipantChoicesResponseDto; // ✨ [추가] DTO 임포트 (아래에서 생성)
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequiredArgsConstructor
@@ -34,5 +36,16 @@ public class VoteApiController {
             // 잘못된 요청 데이터
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+    /**
+     * ✨ [추가] 특정 참여자의 기존 투표 내역을 조회하는 API
+     */
+    @GetMapping("/{uuid}/choices")
+    public ResponseEntity<ParticipantChoicesResponseDto> getParticipantChoices(
+            @PathVariable UUID uuid,
+            @RequestParam("name") String participantName) {
+
+        ParticipantChoicesResponseDto choices = votePageLoadService.getParticipantChoices(uuid, participantName);
+        return ResponseEntity.ok(choices);
     }
 }

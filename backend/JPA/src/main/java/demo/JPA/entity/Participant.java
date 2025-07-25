@@ -55,4 +55,9 @@ public class Participant {
             this.participantName = newName;
         }
     }
+
+    // ✨ [추가] submittedAt 필드를 수정할 수 있는 setter 메서드
+    public void setSubmittedAt(OffsetDateTime submittedAt) {
+        this.submittedAt = submittedAt;
+    }
 }

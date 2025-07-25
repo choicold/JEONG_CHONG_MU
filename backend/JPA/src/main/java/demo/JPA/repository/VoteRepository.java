@@ -23,4 +23,5 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
     List<Vote> findByParticipantIdWithDetails(@Param("participantId") Long participantId);
 
     Optional<Vote> findByParticipantIdAndOcrItemId(Long participantId, Long ocrItemId);
+
 }

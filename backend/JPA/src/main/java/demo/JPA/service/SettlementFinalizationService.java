@@ -5,6 +5,7 @@ import demo.JPA.entity.SettlementStatus;
 import demo.JPA.repository.SettlementRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,9 @@ import java.util.UUID;
 public class SettlementFinalizationService {
 
     private final SettlementRepository settlementRepository;
+
+    @Value("${domain.url}")
+    private String URL;
 
     @Transactional
     public String finalizeAndGenerateLink(UUID settlementUuid) {
@@ -27,6 +31,6 @@ public class SettlementFinalizationService {
 
         settlement.setStatus(SettlementStatus.FINALIZED);
 
-        return "https://stable-finally-jaybird.ngrok-free.app/final-result.html?uuid=" + settlement.getUuid();
+        return URL + "/final-result.html?uuid=" + settlement.getUuid();
     }
 }
