@@ -1,27 +1,53 @@
 package demo.JPA.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-// 레코드를 사용하여 불변 데이터 객체를 간결하게 정의
-public record VotePageLoadDto(
-        String settlementTitle,
-        List<ReceiptGroup> receiptGroups // items 리스트 대신 receiptGroups 리스트를 포함
-) {
-    // 각 영수증 그룹을 나타내는 DTO
-    public record ReceiptGroup(
-            LocalDate receiptDate,
-            BigDecimal totalAmount,
-            String receiptImageUrl,
-            List<ItemInfo> items
-    ) {}
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class VotePageLoadDto {
 
-    // 각 항목 정보를 나타내는 DTO
-    public record ItemInfo(
-            Long itemId,
-            String itemName,
-            BigDecimal itemPrice,
-            Integer quantity
-    ) {}
+    private String settlementTitle;
+    private List<ReceiptGroup> receiptGroups;
+    private List<VoteStatusDto> voteStatuses;
+    private boolean allVoted;
+
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ReceiptGroup {
+        private LocalDate receiptDate;
+        private BigDecimal totalAmount;
+        private String receiptImageUrl;
+        private List<ItemInfo> items;
+    }
+
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ItemInfo {
+        private Long itemId;
+        private String itemName;
+        private BigDecimal itemPrice;
+        private Integer quantity;
+    }
+
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class VoteStatusDto {
+        private String participantName;
+        private boolean hasVoted;
+    }
 }

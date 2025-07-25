@@ -51,7 +51,23 @@ public class VotePageLoadService {
                 })
                 .collect(Collectors.toList());
 
-        return new VotePageLoadDto(settlement.getTitle(), receiptGroups);
+        // 4. 참여자별 투표 상태
+        List<VotePageLoadDto.VoteStatusDto> voteStatuses = participantRepository.findBySettlementId(settlement.getId())
+                .stream()
+                .map(p -> new VotePageLoadDto.VoteStatusDto(p.getParticipantName(), !p.getVotes().isEmpty()))
+                .collect(Collectors.toList());
+
+        // 5. 전체 투표 완료 여부 확인
+        boolean allVoted = voteStatuses.size() == settlement.getTotalParticipantCount()
+                && voteStatuses.stream().allMatch(VotePageLoadDto.VoteStatusDto::hasVoted);
+
+        // 6. 최종 DTO 반환
+        return new VotePageLoadDto(
+                settlement.getTitle(),
+                receiptGroups,
+                voteStatuses,
+                allVoted
+        );
     }
 
     /**
@@ -66,9 +82,12 @@ public class VotePageLoadService {
         return participantRepository.findBySettlementIdAndParticipantName(settlement.getId(), participantName)
                 .map(participant -> {
                     // 참여자가 있으면, 투표 내역을 DTO로 변환하여 반환
-                    List<ParticipantChoicesResponseDto.Choice> choices = participant.getVotes().stream()
-                            .map(vote -> new ParticipantChoicesResponseDto.Choice(vote.getOcrItem().getId(), vote.getIsParticipated()))
-                            .collect(Collectors.toList());
+                    var choices = participant.getVotes().stream()
+                            .map(vote -> new ParticipantChoicesResponseDto.Choice(
+                                    vote.getOcrItem().getId(),
+                                    vote.getIsParticipated()))
+                            .toList();
+
                     return new ParticipantChoicesResponseDto(choices);
                 })
                 // 참여자가 없으면 빈 목록을 가진 DTO 반환
