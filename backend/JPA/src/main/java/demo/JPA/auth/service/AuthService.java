@@ -82,11 +82,11 @@ public class AuthService {
         return new TokenResponse(newAccessToken, null);
     }
 
-    public void logout(Long memberId, String pushToken) {
+    public void logout(Long memberId) {
         // 1. Redis에서 해당 유저의 Refresh Token 삭제
         redisTemplate.delete("Refresh Token: " + memberId);
 
         // 2. DB에서 Push Token 연결 해제
-        pushTokenManagementService.deregisterToken(memberId, pushToken);
+        pushTokenManagementService.deregisterAllTokens(memberId);
     }
 }

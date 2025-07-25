@@ -21,17 +21,16 @@ public class PushTokenManagementService {
         memberPushTokenRepository.findByTokenValue(tokenValue)
                 .ifPresent(memberPushTokenRepository::delete);
 
-        // 2. 현재 사용자에게 이 토큰이 등록되어 있지 않다면 새로 등록
-        boolean tokenExists = member.getPushTokens().stream()
-                .anyMatch(token -> token.getTokenValue().equals(tokenValue));
-        if (!tokenExists) {
-            memberPushTokenRepository.save(new MemberPushToken(member, tokenValue));
-        }
+        // --- 2. 현재 사용자의 '기존 토큰'을 모두 삭제하여, 새 토큰만 남도록 보장 ---
+        memberPushTokenRepository.deleteAllByMemberId(member.getId());
+
+        // --- 3. 전달받은 새 토큰을 저장 ---
+        MemberPushToken newPushToken = new MemberPushToken(member, tokenValue);
+        memberPushTokenRepository.save(newPushToken);
     }
 
     // 로그아웃 시 해당 메서드를 호출하여 pushToken 삭제
-    public void deregisterToken(Long memberId, String tokenValue) {
-        if (tokenValue == null || tokenValue.isBlank()) return;
-        memberPushTokenRepository.deleteByMemberIdAndTokenValue(memberId, tokenValue);
+    public void deregisterAllTokens(Long memberId) {
+        memberPushTokenRepository.deleteAllByMemberId(memberId);
     }
 }

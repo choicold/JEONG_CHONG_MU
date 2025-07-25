@@ -39,9 +39,8 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@AuthenticationPrincipal PrincipalDetails principalDetails,
-                                       @RequestBody PushTokenRequestDto requestDto) {
-        authService.logout(principalDetails.getMember().getId(), requestDto.getPushToken());
+    public ResponseEntity<Void> logout(@AuthenticationPrincipal PrincipalDetails principalDetails) {
+        authService.logout(principalDetails.getMember().getId());
         return ResponseEntity.ok().build();
     }
 }

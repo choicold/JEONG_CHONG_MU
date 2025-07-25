@@ -12,4 +12,5 @@ public interface MemberPushTokenRepository extends JpaRepository<MemberPushToken
     Optional<MemberPushToken> findByTokenValue(String tokenValue);
     void deleteByMemberIdAndTokenValue(Long memberId, String tokenValue);
     void deleteByTokenValue(String tokenValue);
+    void deleteAllByMemberId(Long memberId);
 }

@@ -23,7 +23,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * 최종 정산 금액 계산을 전담하는 서비스.
+ * 최종 정산 금액 계산을 전담하는 서비스
  */
 @Service
 @RequiredArgsConstructor
@@ -91,9 +91,7 @@ public class SettlementResultService {
                 .build();
     }
 
-    /**
-     * 요청하신 포맷으로 토스 딥링크를 생성하는 헬퍼 메소드
-     */
+    // 토스 딥링크를 생성
     private String createTossLink(String bankName, String accountNumber, BigDecimal amount) {
         if (bankName == null || accountNumber == null || amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             return null; // 계좌 정보나 금액이 없으면 링크 생성 불가
