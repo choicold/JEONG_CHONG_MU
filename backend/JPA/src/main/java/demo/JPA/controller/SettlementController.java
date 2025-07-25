@@ -3,14 +3,10 @@ package demo.JPA.controller;
 import demo.JPA.config.security.PrincipalDetails;
 import demo.JPA.dto.*;
 import demo.JPA.entity.Member;
-import demo.JPA.entity.Settlement;
-import demo.JPA.repository.SettlementRepository;
 import demo.JPA.service.*;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*; // GetMapping, PostMapping 등 포함
 
@@ -27,10 +23,7 @@ public class SettlementController {
     private final SettlementDetailService settlementDetailService;
     private final SettlementSearchDataService settlementSearchDataService;
     private final SettlementListService settlementListService;
-    private final VoteSubmitService voteSubmitService;
     private final SettlementFinalizationService settlementFinalizationService;
-    private final SettlementRepository settlementRepository;
-    private final SettlementCorrectionService settlementCorrectionService;
 
     /**
      * 신규 정산 생성 API
@@ -86,39 +79,6 @@ public class SettlementController {
         Long userId = principalDetails.getMember().getId();
         List<SettlementSimpleResponseDto> result = settlementListService.getSettlementsForAuthenticatedUser(userId);
         return ResponseEntity.ok(result);
-    }
-
-//    // 총무를 위한 인앱 투표 제출 API
-//    @PostMapping("/{settlementUuid}/vote")
-//    public ResponseEntity<String> submitVoteAuthenticated(
-//            @PathVariable UUID settlementUuid,
-//            @AuthenticationPrincipal PrincipalDetails principalDetails,
-//            @RequestBody AuthenticatedVoteSubmitRequestDto requestDto) {
-//
-//        String message = voteSubmitService.submitVote(settlementUuid, requestDto, principalDetails.getMember());
-//        return ResponseEntity.ok(message);
-//    }
-
-    // 총무가 최종 정산 전 참여자 이름과 OcrItem(true/false)만 수정하는 API
-    @PutMapping("/{settlementUuid}/corrections")
-    public ResponseEntity<Void> applyFinalCorrections(
-            @PathVariable UUID settlementUuid,
-            @AuthenticationPrincipal PrincipalDetails principalDetails,
-            @RequestBody FinalCorrectionRequestDto requestDto) {
-
-        // 1. DB에서 정산 정보 조회
-        Settlement settlement = settlementRepository.findByUuid(settlementUuid)
-                .orElseThrow(() -> new EntityNotFoundException("해당 UUID의 정산을 찾을 수 없습니다: " + settlementUuid));
-
-        // 2. 현재 로그인한 사용자가 정산의 호스트인지 검증
-        if (!settlement.getHostMember().getId().equals(principalDetails.getMember().getId())) {
-            throw new AccessDeniedException("이 정산을 수정할 권한이 없습니다.");
-        }
-
-        // 3. 이름 및 OcrItem(true/fals) 수정 서비스 호출
-        settlementCorrectionService.applyFinalCorrections(requestDto);
-
-        return ResponseEntity.ok().build();
     }
 
     // 최종 정산 토스 링크 생성

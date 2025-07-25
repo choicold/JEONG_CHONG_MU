@@ -25,8 +25,8 @@ public class SettlementFinalizationService {
         Settlement settlement = settlementRepository.findByUuid(settlementUuid)
                 .orElseThrow(() -> new EntityNotFoundException("정산을 찾을 수 없습니다."));
 
-        if (settlement.getStatus() != SettlementStatus.COMPLETED) {
-            throw new IllegalStateException("투표가 완료된 정산만 최종 확정할 수 있습니다.");
+        if (settlement.getStatus() != SettlementStatus.VOTING) {
+            throw new IllegalStateException("이미 확정되었거나 진행 중이 아닌 정산입니다.");
         }
 
         settlement.setStatus(SettlementStatus.FINALIZED);
